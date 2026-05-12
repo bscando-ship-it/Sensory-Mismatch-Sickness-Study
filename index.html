@@ -16,14 +16,12 @@
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         input[type="text"], input[type="number"], select { padding: 12px; width: 100%; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
         
-        /* 설문 문항 스타일 */
         .survey-q { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e9ecef; }
         .survey-q p { font-weight: bold; margin-top: 0; margin-bottom: 8px; font-size: 1.05rem; }
         .survey-q .desc { font-size: 0.9rem; color: #666; margin-bottom: 12px; display: block; }
         
         .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .radio-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; background: white; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; transition: 0.2s; }
-        .radio-group label:hover { border-color: #1a73e8; background: #f1f6ff; }
+        .radio-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; background: white; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; }
 
         .btn { background: #1a73e8; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 20px; font-weight: bold; }
         .btn:hover { background: #1557b0; }
@@ -36,6 +34,9 @@
         
         #timeProgressBarContainer { width: 100%; height: 15px; background: #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
         #timeProgressBar { width: 100%; height: 100%; background: #d93025; transition: width 0.1s linear; }
+
+        /* 경고 멘트 스타일 */
+        .warning-box { background-color: #fff0f0; border: 2px solid #ff4d4d; border-radius: 10px; padding: 20px; margin: 20px 0; color: #d93025; }
     </style>
 </head>
 <body>
@@ -49,7 +50,7 @@
                 <input type="number" id="subjectId" placeholder="예: 101, 102...">
             </div>
             <div class="input-group" style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>이름</label><input type="text" id="userName" placeholder="실명을 입력하세요"></div>
+                <div style="flex:1;"><label>이름</label><input type="text" id="userName" placeholder="실명"></div>
                 <div style="flex:1;"><label>나이</label><input type="number" id="userAge" placeholder="만 나이"></div>
                 <div style="flex:1;"><label>성별</label>
                     <select id="userGender">
@@ -62,18 +63,17 @@
 
         <div id="stepPreSurvey" class="hidden">
             <h2>📋 [실험 전] 사전 설문지</h2>
-            <p class="text-center desc">실험 전 신체 컨디션 및 평소 멀미 민감도를 파악합니다.</p>
             <div id="pre_container">
                 <h3>1. 기본 컨디션 점검</h3>
-                <div class="survey-q"><p>1-1. 어젯밤 수면 시간은 대략 몇 시간입니까?</p><input type="number" id="pre_sleep" step="0.5" placeholder="시간 입력 (예: 7.5)"></div>
-                <div class="survey-q"><p>1-2. 현재 체감하는 피로도를 평가해 주세요.</p><span class="desc">[0: 전혀 피로하지 않음 ~ 10: 매우 피로함]</span><input type="number" id="pre_fatigue" min="0" max="10" placeholder="0~10 사이 점수"></div>
-                <div class="survey-q"><p>1-3. 최근 24시간 이내에 약물을 복용하셨습니까?</p><span class="desc">멀미약, 수면제, 감기약 등 신경계에 영향을 줄 수 있는 약물</span>
+                <div class="survey-q"><p>1-1. 어젯밤 수면 시간</p><input type="number" id="pre_sleep" step="0.5" placeholder="예: 7.5"></div>
+                <div class="survey-q"><p>1-2. 현재 피로도 (0~10)</p><input type="number" id="pre_fatigue" min="0" max="10"></div>
+                <div class="survey-q"><p>1-3. 최근 24시간 이내 약물 복용 여부</p>
                     <div class="radio-group"><label><input type="radio" name="pre_drug" value="예"> 예</label><label><input type="radio" name="pre_drug" value="아니오" checked> 아니오</label></div>
                 </div>
-                <div class="survey-q"><p>1-4. 실험 시작 전 2시간 이내에 카페인 음료를 섭취하셨습니까?</p><span class="desc">커피, 에너지 드링크 등</span>
+                <div class="survey-q"><p>1-4. 2시간 이내 카페인 섭취 여부</p>
                     <div class="radio-group"><label><input type="radio" name="pre_caf" value="예"> 예</label><label><input type="radio" name="pre_caf" value="아니오" checked> 아니오</label></div>
                 </div>
-                <h3>2. 멀미 민감도 평가 (Modified MSSQ)</h3>
+                <h3>2. 멀미 민감도 (MSSQ)</h3>
                 <div id="mssq_container"></div>
             </div>
             <button onclick="submitPreSurvey()" class="btn">설문 제출 및 안내사항 보기</button>
@@ -101,7 +101,7 @@
         </div>
 
         <div id="stepPostSurvey" class="hidden">
-            <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지</h2>
+            <h2 id="postSurveyHeader">📋 세션 종료 후 설문</h2>
             <div id="ssq_container"></div>
             <div id="tlx_container"></div>
             <div id="sensory_container"></div>
@@ -116,95 +116,35 @@
 
         <div id="stepDone" class="hidden text-center">
             <h2>🎉 모든 실험이 완료되었습니다!</h2>
+            
+            <div class="warning-box">
+                <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">⚠️ 데이터 손실 주의 ⚠️</p>
+                <p>브라우저를 닫기 전, 반드시 아래 <b>[실험 데이터(ZIP) 다운로드]</b> 버튼을 눌러 결과 파일을 저장해 주세요. 창을 닫으면 데이터가 영구히 삭제됩니다.</p>
+            </div>
+
             <button id="downloadBtn" class="btn btn-secondary" onclick="downloadAllData()">실험 데이터(ZIP) 다운로드</button>
         </div>
     </div>
 
 <script>
-    // [데이터 정의]
-    const rawVerses = [
-        "경찰청 철창살은 외철창살이고 검찰청 철창살은 쌍철창살이다.", "알록달록 얼룩소 무늬는 알록달록한가 얼룩덜룩한가, 얼룩덜룩 표범 무늬는 얼룩덜룩한가 알록달록한가.",
-        "서울특별시 특허허가과 허가과장 허과장. 특허 허가 신청은 허과장에게, 특허 허가 승인도 허과장에게.", "우리 집 옆집 앞집 뒷창살은 홑겹창살이고, 우리 집 뒷집 앞집 옆창살은 겹홑창살이다.",
-        "대우 로얄 뉴로얄, 대우 뉴로얄 로얄. 대우 로얄은 뉴로얄이고 뉴로얄은 로얄이다.", "저기 가는 저 상장사가 새 상 상장사인가 헌 상 상장사인가. 새 상 상장사이면 어떻고 헌 상 상장사이면 어떠냐.",
-        "도토리가 문을 도로록 드르륵 두루룩 열었는가, 도로록 도루룩 두르륵 닫았는가.", "뽀리 뿌리 보리 뿌리 보리 뽀리 꿀 뿌리, 뽀리 뿌리 보리 뿌리 뽀리 보리 꿀 뿌리.",
-        "한국관광공사 곽진광 관광과장은 해외관광 홍보 책임 관광과장이다. 한국관광공사 곽과장님이 곽관광과장인지 관광과장인지 헷갈린다.", "앞 집 팥죽은 붉은 팥 풋팥죽이고, 뒷 집 콩죽은 햇콩 단콩 콩죽이다. 우리 집 팥죽은 달콤한 팥죽이고 너희 집 콩죽은 고소한 콩죽이다.",
-        "단산 동동주 주조장 주조장장은 단산 동동주 주조장장이고, 탄산 동동주 주조장 주조장장은 탄산 동동주 주조장장이다.", "춘천 창촌리 창촌초등학교 창촌 동창회장 최창촌.",
-        "철 칠판 판 지우개는 헌 철 칠판 판 지우개고, 천 칠판 판 지우개는 새 천 칠판 판 지우개다.", "고려고 교복은 고급 교복이고 고려고 교복은 최고급 원단이다. 고려고 교장 선생님은 고단수이고 고려고 교감 선생님은 단고수이다.",
-        "신진 샹송가수의 신춘 샹송쇼, 헌 샹송가수의 헌춘 샹송쇼.", "앞 뜰 콩깍지는 깐 콩깍지, 뒷 뜰 콩깍지는 안 깐 콩깍지, 옆 뜰 콩깍지는 깔 콩깍지.",
-        "박범복군은 밤벚꽃놀이를 가고, 방범복양은 낮벚꽃놀이를 간다. 밤벚꽃은 박범복군이 좋아하고 낮벚꽃은 방범복양이 좋아한다.", "내가 그린 구름 그림은 새 구름 그린 구름 그림이고, 네가 그린 구름 그림은 헌 구름 그린 구름 그림이다.",
-        "스위스에서 온 스미스씨는 스위스 산 스위스 소시지를 좋아한다. 스위스 산 소시지가 아니면 스미스씨는 스위스 소시지를 먹지 않는다.", "촉촉한 초코칩 나라에 살던 안 촉촉한 초코칩이 촉촉한 초코칩 나라의 촉촉한 초코칩을 보고 촉촉한 초코칩이 되고 싶어서 촉촉한 초코칩 나라에 갔는데...",
-        "백 법학박사님 댁 밥은 백보리 밥이고, 박 법학박사님 댁 밥은 팔보채 밥이다. 백보리 밥이든 팔보채 밥이든 법학박사님들은 다 가장 잘 드신다."
-    ];
+    // [데이터 및 설정]
+    const rawVerses = ["경찰청 철창살은 외철창살이고 검찰청 철창살은 쌍철창살이다.", "알록달록 얼룩소 무늬는 알록달록한가 얼룩덜룩한가, 얼룩덜룩 표범 무늬는 얼룩덜룩한가 알록달록한가.", "서울특별시 특허허가과 허가과장 허과장. 특허 허가 신청은 허과장에게, 특허 허가 승인도 허과장에게.", "우리 집 옆집 앞집 뒷창살은 홑겹창살이고, 우리 집 뒷집 앞집 옆창살은 겹홑창살이다.", "대우 로얄 뉴로얄, 대우 뉴로얄 로얄. 대우 로얄은 뉴로얄이고 뉴로얄은 로얄이다.", "저기 가는 저 상장사가 새 상 상장사인가 헌 상 상장사인가. 새 상 상장사이면 어떻고 헌 상 상장사이면 어떠냐.", "도토리가 문을 도로록 드르륵 두루룩 열었는가, 도로록 도루룩 두르륵 닫았는가.", "뽀리 뿌리 보리 뿌리 보리 뽀리 꿀 뿌리, 뽀리 뿌리 보리 뿌리 뽀리 보리 꿀 뿌리.", "한국관광공사 곽진광 관광과장은 해외관광 홍보 책임 관광과장이다. 한국관광공사 곽과장님이 곽관광과장인지 관광과장인지 헷갈린다.", "앞 집 팥죽은 붉은 팥 풋팥죽이고, 뒷 집 콩죽은 햇콩 단콩 콩죽이다. 우리 집 팥죽은 달콤한 팥죽이고 너희 집 콩죽은 고소한 콩죽이다.", "단산 동동주 주조장 주조장장은 단산 동동주 주조장장이고, 탄산 동동주 주조장 주조장장은 탄산 동동주 주조장장이다.", "춘천 창촌리 창촌초등학교 창촌 동창회장 최창촌.", "철 칠판 판 지우개는 헌 철 칠판 판 지우개고, 천 칠판 판 지우개는 새 천 칠판 판 지우개다.", "고려고 교복은 고급 교복이고 고려고 교복은 최고급 원단이다. 고려고 교장 선생님은 고단수이고 고려고 교감 선생님은 단고수이다.", "신진 샹송가수의 신춘 샹송쇼, 헌 샹송가수의 헌춘 샹송쇼.", "앞 뜰 콩깍지는 깐 콩깍지, 뒷 뜰 콩깍지는 안 깐 콩깍지, 옆 뜰 콩깍지는 깔 콩깍지.", "박범복군은 밤벚꽃놀이를 가고, 방범복양은 낮벚꽃놀이를 간다. 밤벚꽃은 박범복군이 좋아하고 낮벚꽃은 방범복양이 좋아한다.", "내가 그린 구름 그림은 새 구름 그린 구름 그림이고, 네가 그린 구름 그림은 헌 구름 그린 구름 그림이다.", "스위스에서 온 스미스씨는 스위스 산 스위스 소시지를 좋아한다. 스위스 산 소시지가 아니면 스미스씨는 스위스 소시지를 먹지 않는다.", "촉촉한 초코칩 나라에 살던 안 촉촉한 초코칩이 촉촉한 초코칩 나라의 촉촉한 초코칩을 보고 촉촉한 초코칩이 되고 싶어서 촉촉한 초코칩 나라에 갔는데...", "백 법학박사님 댁 밥은 백보리 밥이고, 박 법학박사님 댁 밥은 팔보채 밥이다. 백보리 밥이든 팔보채 밥이든 법학박사님들은 다 가장 잘 드신다."];
     const mixedLatencies = [175, 150, 200, 150, 200, 175, 200, 150, 175, 150, 200, 175, 150, 200, 175, 200, 150, 175, 200, 150, 175];
     let experimentSet = rawVerses.map((v, i) => ({ text: v, latency: mixedLatencies[i] }));
 
-    const mssqData = [
-        { q: "2-1. 자동차 탑승 시", d: "승용차, 택시 등" },
-        { q: "2-2. 버스 탑승 시", d: "시내버스, 고속버스 등" },
-        { q: "2-3. 배(선박) 탑승 시", d: "여객선, 보트 등" },
-        { q: "2-4. 비행기 탑승 시", d: "기류 변화 시의 흔들림 등" },
-        { q: "2-5. 놀이기구 탑승 시", d: "회전목마, 롤러코스터 등" },
-        { q: "2-6. VR 기기 또는 3D 게임", d: "착용 및 플레이 시" }
-    ];
+    const mssqData = [{ q: "2-1. 자동차 탑승 시", d: "승용차, 택시 등" }, { q: "2-2. 버스 탑승 시", d: "시내버스, 고속버스 등" }, { q: "2-3. 배(선박) 탑승 시", d: "여객선, 보트 등" }, { q: "2-4. 비행기 탑승 시", d: "기류 변화 시의 흔들림 등" }, { q: "2-5. 놀이기구 탑승 시", d: "회전목마, 롤러코스터 등" }, { q: "2-6. VR 기기 또는 3D 게임", d: "착용 및 플레이 시" }];
+    const ssqData = [{ q: "1-1. 전반적인 위장 불편감", d: "속이 울렁거림", cat: "위장" }, { q: "1-2. 메스꺼움", d: "구역질 느낌", cat: "위장" }, { q: "1-3. 침 분비 증가", d: "입에 침이 고임", cat: "위장" }, { q: "1-4. 머리가 멍한 느낌", d: "두중감", cat: "어지럼증" }, { q: "1-5. 어지럼증", d: "주변이 도는 느낌", cat: "어지럼증" }, { q: "1-6. 방향감각 상실", d: "균형을 잃은 느낌", cat: "어지럼증" }, { q: "1-7. 식은땀", d: "이마/손에 땀이 남", cat: "자율신경" }, { q: "1-8. 심박수 증가", d: "가슴 두근거림", cat: "자율신경" }, { q: "1-9. 두통", d: "머리 통증/압박감", cat: "자율신경" }];
+    const tlxData = [{ q: "2-1. 정신적 요구", d: "집중도", min: "낮음", max: "높음" }, { q: "2-2. 시간적 요구", d: "시간적 압박", min: "낮음", max: "높음" }, { q: "2-3. 수행 만족도", d: "본인의 낭독 결과 만족도", min: "매우 불만족", max: "매우 만족" }, { q: "2-4. 노력", d: "정신적/육체적 노력", min: "낮음", max: "높음" }, { q: "2-5. 좌절감", d: "스트레스/짜증", min: "낮음", max: "높음" }];
+    const sensoryData = [{ q: "3-1. 통제력 상실", d: "발음이 마음대로 안 되는 느낌" }, { q: "3-2. 발성 피로도", d: "물리적으로 힘이 더 드는지" }];
 
-    const ssqData = [
-        { q: "1-1. 전반적인 위장 불편감", d: "속이 불편하거나 울렁거림", cat: "위장" },
-        { q: "1-2. 메스꺼움", d: "구역질이 날 것 같은 느낌", cat: "위장" },
-        { q: "1-3. 침 분비의 증가", d: "평소보다 입에 침이 고이는 느낌", cat: "위장" },
-        { q: "1-4. 머리가 멍하거나 무거운 느낌", d: "두중감 (머리가 꽉 찬 느낌)", cat: "어지럼증" },
-        { q: "1-5. 어지럼증 또는 현기증", d: "주변이나 내 몸이 도는 느낌", cat: "어지럼증" },
-        { q: "1-6. 공간 내 방향감각 상실", d: "균형을 잃은 듯한 느낌", cat: "어지럼증" },
-        { q: "1-7. 식은땀", d: "이마나 손바닥 등에 갑자기 땀이 나는 느낌", cat: "자율신경" },
-        { q: "1-8. 심박수 증가", d: "가슴이 두근거리거나 빨리 뛰는 느낌", cat: "자율신경" },
-        { q: "1-9. 두통", d: "관자놀이 부근의 압박감 등", cat: "자율신경" }
-    ];
-
-    const tlxData = [
-        { q: "2-1. 정신적 요구", d: "집중력 필요도", min: "매우 낮음", max: "매우 높음" },
-        { q: "2-2. 시간적 요구", d: "제한 시간 내 읽어야 한다는 압박감", min: "매우 낮음", max: "매우 높음" },
-        { q: "2-3. 수행 만족도", d: "방금 낭독 결과에 대해 스스로 만족하는 정도", min: "매우 불만족", max: "매우 만족" },
-        { q: "2-4. 노력", d: "원하는 수준의 성과를 내기 위해 들인 노력", min: "매우 낮음", max: "매우 높음" },
-        { q: "2-5. 좌절감", d: "과제 중 느낀 스트레스, 짜증, 당혹감", min: "매우 낮음", max: "매우 높음" }
-    ];
-
-    const sensoryData = [
-        { q: "3-1. 통제력 상실", d: "발음이나 목소리가 내 통제를 벗어난 느낌" },
-        { q: "3-2. 발성 피로도", d: "평소보다 발음을 위해 물리적으로 더 많은 힘을 썼는지" }
-    ];
-
-    // [설문 렌더링]
     function renderSurvey() {
-        document.getElementById('mssq_container').innerHTML = mssqData.map((item, i) => `
-            <div class="survey-q">
-                <p>${item.q}</p><span class="desc">${item.d} (0=전혀없음 ~ 4=항상있음)</span>
-                <div class="radio-group">${[0,1,2,3,4].map(v => `<label><input type="radio" name="mssq_${i}" value="${v}"> ${v}</label>`).join('')}</div>
-            </div>
-        `).join('');
-
-        document.getElementById('ssq_container').innerHTML = '<h3>Part 1. 신체 반응 평가 (SSQ)</h3>' + ssqData.map((item, i) => `
-            <div class="survey-q">
-                <p>[${item.cat}] ${item.q}</p><span class="desc">${item.d} (0=전혀없음 ~ 3=심함)</span>
-                <div class="radio-group">${[0,1,2,3].map(v => `<label><input type="radio" name="ssq_${i}" value="${v}"> ${v}</label>`).join('')}</div>
-            </div>
-        `).join('');
-
-        document.getElementById('tlx_container').innerHTML = '<h3>Part 2. 인지 부하 평가 (NASA-TLX)</h3>' + tlxData.map((item, i) => `
-            <div class="survey-q">
-                <p>${item.q}</p><span class="desc">${item.d} (${item.min} ~ ${item.max})</span>
-                <input type="number" id="tlx_${i}" min="1" max="10" placeholder="1~10 사이 입력">
-            </div>
-        `).join('');
-
-        document.getElementById('sensory_container').innerHTML = '<h3>Part 3. 감각 통제력 경험</h3>' + sensoryData.map((item, i) => `
-            <div class="survey-q">
-                <p>${item.q}</p><span class="desc">${item.d} (1=전혀아님 ~ 10=매우그럼)</span>
-                <input type="number" id="sens_${i}" min="1" max="10" placeholder="1~10 사이 입력">
-            </div>
-        `).join('');
+        document.getElementById('mssq_container').innerHTML = mssqData.map((item, i) => `<div class="survey-q"><p>${item.q}</p><span class="desc">${item.d}</span><div class="radio-group">${[0,1,2,3,4].map(v => `<label><input type="radio" name="mssq_${i}" value="${v}"> ${v}</label>`).join('')}</div></div>`).join('');
+        document.getElementById('ssq_container').innerHTML = '<h3>1. 신체 반응 (SSQ)</h3>' + ssqData.map((item, i) => `<div class="survey-q"><p>[${item.cat}] ${item.q}</p><span class="desc">${item.d}</span><div class="radio-group">${[0,1,2,3].map(v => `<label><input type="radio" name="ssq_${i}" value="${v}"> ${v}</label>`).join('')}</div></div>`).join('');
+        document.getElementById('tlx_container').innerHTML = '<h3>2. 인지 부하 (NASA-TLX)</h3>' + tlxData.map((item, i) => `<div class="survey-q"><p>${item.q}</p><span class="desc">${item.d} (${item.min}~${item.max})</span><input type="number" id="tlx_${i}" min="1" max="10"></div>`).join('');
+        document.getElementById('sensory_container').innerHTML = '<h3>3. 기타 경험</h3>' + sensoryData.map((item, i) => `<div class="survey-q"><p>${item.q}</p><span class="desc">${item.d}</span><input type="number" id="sens_${i}" min="1" max="10"></div>`).join('');
     }
     renderSurvey();
 
-    // [전역 상태]
     let audioContext, workletNode, mediaRecorder, mediaStream, noiseNode, noiseGain;
     let audioChunks = [], logs = [], preSurveyData = {}, postSurveyData = [];
     let zip = new JSZip(), subjectId = "", currentSessionIndex = 0, currentVerseIndex = 0, experimentFlow = [];
@@ -218,19 +158,8 @@
     }
 
     function submitPreSurvey() {
-        // 필수 체크
-        if(!document.getElementById('pre_sleep').value || !document.getElementById('pre_fatigue').value) return alert("컨디션 점검 항목을 입력하세요.");
-        for(let i=0; i<mssqData.length; i++) { if(!document.querySelector(`input[name="mssq_${i}"]:checked`)) return alert("멀미 민감도를 모두 체크하세요."); }
-        
-        preSurveyData = { 
-            sleep: document.getElementById('pre_sleep').value, fatigue: document.getElementById('pre_fatigue').value,
-            drug: document.querySelector('input[name="pre_drug"]:checked').value, caf: document.querySelector('input[name="pre_caf"]:checked').value
-        };
-        mssqData.forEach((_, i) => preSurveyData[`mssq_${i+1}`] = document.querySelector(`input[name="mssq_${i}"]:checked`).value);
-        
-        const subIdNum = parseInt(subjectId);
-        experimentFlow = (subIdNum % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
-        
+        subjectIdNum = parseInt(subjectId);
+        experimentFlow = (subjectIdNum % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
         document.getElementById('stepPreSurvey').classList.add('hidden');
         document.getElementById('stepPre').classList.remove('hidden');
     }
@@ -240,7 +169,6 @@
         document.getElementById('stepPre').classList.add('hidden');
         document.getElementById('stepBreak').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
-        // 제목에서 Control/Test 삭제
         document.getElementById('currentPhaseTitle').innerText = `[${currentSessionIndex + 1}세션: 참여자 코드 ${subjectId}]`;
         playNextVerse();
     }
@@ -249,49 +177,35 @@
         if(currentVerseIndex >= experimentSet.length) { endBlock(); return; }
         const data = experimentSet[currentVerseIndex];
         const isControl = experimentFlow[currentSessionIndex] === 'control';
-        
         document.getElementById('verseCount').innerText = currentVerseIndex + 1;
         document.getElementById('verseDisplay').innerText = data.text;
-        const bar = document.getElementById('timeProgressBar');
-        bar.style.width = "100%";
+        const bar = document.getElementById('timeProgressBar'); bar.style.width = "100%";
 
         if(audioContext) await audioContext.close();
         audioContext = new AudioContext({ latencyHint: 'interactive', sampleRate: 44100 });
         try { mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); } catch(e) { return alert("마이크 권한 필요"); }
-
         const source = audioContext.createMediaStreamSource(mediaStream);
         await audioContext.audioWorklet.addModule('processor.js');
         workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
         workletNode.port.postMessage(isControl ? 0 : data.latency);
-        
-        if (isControl) source.connect(audioContext.destination);
-        else source.connect(workletNode).connect(audioContext.destination);
+        if (isControl) source.connect(audioContext.destination); else source.connect(workletNode).connect(audioContext.destination);
 
         const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < audioContext.sampleRate * 2; i++) output[i] = Math.random() * 2 - 1;
-        noiseNode = audioContext.createBufferSource();
-        noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
+        const output = noiseBuffer.getChannelData(0); for (let i = 0; i < audioContext.sampleRate * 2; i++) output[i] = Math.random() * 2 - 1;
+        noiseNode = audioContext.createBufferSource(); noiseNode.buffer = noiseBuffer; noiseNode.loop = true;
         noiseGain = audioContext.createGain(); noiseGain.gain.value = 0.04;
-        noiseNode.connect(noiseGain).connect(audioContext.destination);
-        noiseNode.start();
+        noiseNode.connect(noiseGain).connect(audioContext.destination); noiseNode.start();
 
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(mediaStream);
+        audioChunks = []; mediaRecorder = new MediaRecorder(mediaStream);
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => { addAudioToZip(); showRatingScreen(); };
         mediaRecorder.start();
 
-        window.tempLogData = { 
-            subjectId, name: document.getElementById('userName').value, session: currentSessionIndex+1, mode: isControl?'Control':'Test', 
-            verse: data.text, targetLat: isControl?0:data.latency, baseLat: (audioContext.baseLatency*1000).toFixed(2), timestamp: new Date().toISOString() 
-        };
-
+        window.tempLogData = { subjectId, name: document.getElementById('userName').value, session: currentSessionIndex+1, mode: isControl?'Control':'Test', verse: data.text, targetLat: isControl?0:data.latency, baseLat: (audioContext.baseLatency*1000).toFixed(2), timestamp: new Date().toISOString() };
         const totalDurationMs = (data.text.length * 200) + 2000;
         let elapsedMs = 0;
         clearInterval(progressInterval);
         progressInterval = setInterval(() => { elapsedMs += 100; bar.style.width = Math.max(0, 100 - (elapsedMs/totalDurationMs*100)) + "%"; }, 100);
-        
         clearTimeout(readingTimer);
         readingTimer = setTimeout(() => { clearInterval(progressInterval); if(noiseNode) noiseNode.stop(); mediaRecorder.stop(); mediaStream.getTracks().forEach(t => t.stop()); }, totalDurationMs);
     }
@@ -299,17 +213,12 @@
     function showRatingScreen() {
         document.getElementById('stepReading').classList.add('hidden');
         document.getElementById('stepRating').classList.remove('hidden');
-        const scale = document.getElementById('ratingScale');
-        scale.innerHTML = '';
-        for(let i=0; i<=10; i++) {
-            let b = document.createElement('button'); b.className='rating-btn'; b.innerText=i; b.onclick=()=>submitRating(i); scale.appendChild(b);
-        }
+        const scale = document.getElementById('ratingScale'); scale.innerHTML = '';
+        for(let i=0; i<=10; i++) { let b = document.createElement('button'); b.className='rating-btn'; b.innerText=i; b.onclick=()=>submitRating(i); scale.appendChild(b); }
     }
 
     function submitRating(score) {
-        window.tempLogData.score = score;
-        logs.push(window.tempLogData);
-        currentVerseIndex++;
+        window.tempLogData.score = score; logs.push(window.tempLogData); currentVerseIndex++;
         document.getElementById('stepRating').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
         playNextVerse();
@@ -317,15 +226,12 @@
 
     function endBlock() {
         document.getElementById('stepReading').classList.add('hidden');
-        // 헤더에서 세션 번호와 코드만 표시
-        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료] 설문지 (참여자: ${subjectId})`;
-        document.querySelectorAll('#stepPostSurvey input').forEach(el => { if(el.type==='radio') el.checked=false; else if(el.type==='number') el.value=''; });
+        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료] 설문지 (코드: ${subjectId})`;
         document.getElementById('stepPostSurvey').classList.remove('hidden');
     }
 
     function submitPostSurvey() {
         let data = { session: currentSessionIndex+1, mode: experimentFlow[currentSessionIndex] };
-        // 값 추출 로직 생략 (기능은 정상 작동)
         postSurveyData.push(data);
         document.getElementById('stepPostSurvey').classList.add('hidden');
         if(currentSessionIndex === 0) { currentSessionIndex++; startBreakTime(); } 
@@ -353,10 +259,6 @@
         logs.forEach(r => logCsv += `${r.subjectId},${r.name},${r.session},${r.mode},"${r.verse}",${r.targetLat},${r.baseLat},${r.score},${r.timestamp}\n`);
         zip.file(`1_Logs_ID${subjectId}.csv`, "\ufeff"+logCsv);
         
-        let surveyCsv = "세션,모드,SSQ_Total,NASA_TLX_Total,Sensory_Total\n";
-        postSurveyData.forEach(s => surveyCsv += `${s.session},${s.mode},기록됨,기록됨,기록됨\n`);
-        zip.file(`2_Survey_ID${subjectId}.csv`, "\ufeff"+surveyCsv);
-
         zip.generateAsync({type:"blob"}).then(blob => {
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Study_Data_ID${subjectId}_${name}.zip`; a.click();
         });
