@@ -196,7 +196,7 @@
         noiseNode.buffer = noiseBuffer;
         noiseNode.loop = true;
         noiseGain = context.createGain();
-        noiseGain.gain.value = 0.03; // 백색소음 설정
+        noiseGain.gain.value = 0.04; // 백색소음 설정
         noiseNode.connect(noiseGain).connect(context.destination);
         noiseNode.start();
     }
