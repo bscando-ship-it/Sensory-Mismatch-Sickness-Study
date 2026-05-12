@@ -196,7 +196,7 @@
         noiseNode.buffer = noiseBuffer;
         noiseNode.loop = true;
         noiseGain = context.createGain();
-        noiseGain.gain.value = 0.1; // 백색소음 0.08 설정
+        noiseGain.gain.value = 0.03; // 백색소음 설정
         noiseNode.connect(noiseGain).connect(context.destination);
         noiseNode.start();
     }
@@ -229,13 +229,9 @@
         await audioContext.audioWorklet.addModule('processor.js');
         workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
         workletNode.port.postMessage(isControl ? 0 : data.latency);
-
-        // 목소리 볼륨 증폭 설정 (3.0배)
-        const voiceGain = audioContext.createGain();
-        voiceGain.gain.value = 3.0; 
         
-        // 올바른 단일 연결 파이프라인
-        source.connect(workletNode).connect(voiceGain).connect(audioContext.destination);
+        // 원본과 동일하게 직접 연결 (목소리 증폭 제거)
+        source.connect(workletNode).connect(audioContext.destination);
 
         playWhiteNoise(audioContext);
 
