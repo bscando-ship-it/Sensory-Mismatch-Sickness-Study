@@ -241,11 +241,11 @@
         try { mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); } 
         catch(e) { return alert("마이크 권한이 필요합니다."); }
 
-        const source = audioContext.createMediaStreamSource(mediaStream);
-        await audioContext.audioWorklet.addModule('processor.js');
-        workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
-        workletNode.port.postMessage(isControl ? 0 : data.latency);
-        source.connect(workletNode).connect(audioContext.destination);
+        const voiceGain = audioContext.createGain();
+        voiceGain.gain.value = 1.5; // 1.0이 원본 크기, 2.0은 두 배 증폭, 3.0은 세 배 증폭
+
+        // source -> 지연 처리기(workletNode) -> 볼륨 조절기(voiceGain) -> 이어폰(destination) 순서로 연결
+        source.connect(workletNode).connect(voiceGain).connect(audioContext.destination);
 
         // 녹음 및 문장 읽기가 시작됨과 동시에 배경 서라운드 백색소음 재생
         playWhiteNoise(audioContext);
