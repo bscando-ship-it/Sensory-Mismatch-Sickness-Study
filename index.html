@@ -230,8 +230,13 @@
         workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
         workletNode.port.postMessage(isControl ? 0 : data.latency);
         
-        // 원본과 동일하게 직접 연결 (목소리 증폭 제거)
-        source.connect(workletNode).connect(audioContext.destination);
+        if (isControl) {
+            // 대조군: 워클렛(프로세서)을 거치지 않고 바로 목적지로 연결
+            source.connect(audioContext.destination);
+        } else {
+            // 실험군: 워클렛을 거쳐 Latency 적용 후 연결
+            source.connect(workletNode).connect(audioContext.destination);
+        }
 
         playWhiteNoise(audioContext);
 
