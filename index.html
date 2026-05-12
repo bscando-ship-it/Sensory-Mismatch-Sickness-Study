@@ -242,7 +242,7 @@
         catch(e) { return alert("마이크 권한이 필요합니다."); }
 
         const voiceGain = audioContext.createGain();
-        voiceGain.gain.value = 5.0; // 1.0이 원본 크기, 2.0은 두 배 증폭, 3.0은 세 배 증폭
+        voiceGain.gain.value = 3.0; // 1.0이 원본 크기, 2.0은 두 배 증폭, 3.0은 세 배 증폭
 
         // source -> 지연 처리기(workletNode) -> 볼륨 조절기(voiceGain) -> 이어폰(destination) 순서로 연결
         source.connect(workletNode).connect(voiceGain).connect(audioContext.destination);
