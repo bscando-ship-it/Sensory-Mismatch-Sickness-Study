@@ -217,7 +217,10 @@
         bar.style.width = "100%";
 
         if(audioContext) await audioContext.close();
-        audioContext = new AudioContext();
+        audioContext = new AudioContext({
+            latencyHint: 'interactive', // 최대한 지연 시간을 줄이도록 설정
+            sampleRate: 44100           // 표준 샘플 레이트 고정
+                });
         
         try { 
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); 
