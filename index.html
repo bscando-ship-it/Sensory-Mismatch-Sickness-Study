@@ -11,28 +11,22 @@
         .text-center { text-align: center; }
         h1, h2 { color: #1a73e8; text-align: center; }
         h3 { color: #333; margin-top: 30px; border-bottom: 2px solid #1a73e8; padding-bottom: 5px; display: inline-block;}
-        
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         input[type="text"], input[type="number"], select { padding: 12px; width: 100%; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        
         .survey-q { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; }
         .survey-q p { font-weight: bold; margin-top: 0; margin-bottom: 10px; }
         .radio-group { display: flex; gap: 15px; flex-wrap: wrap; }
         .radio-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         .survey-note { font-size: 0.9rem; color: #666; margin-bottom: 15px; }
-
         .verse-box { background: #202124; color: white; padding: 50px; font-size: 2.2rem; border-radius: 15px; margin: 20px 0; min-height: 180px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.4; word-break: keep-all; }
-        
         .btn { background: #1a73e8; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 20px; font-weight: bold; }
         .btn:hover { background: #1557b0; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
         .btn-secondary { background: #34a853; }
-        
         .rating-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; margin-top: 20px; }
         .rating-btn { padding: 15px 5px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 5px; font-size: 1.1rem; }
         .rating-btn:hover { background: #1a73e8; color: white; }
-        
         #timeProgressBarContainer { width: 100%; height: 15px; background: #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
         #timeProgressBar { width: 100%; height: 100%; background: #d93025; transition: width 0.1s linear; }
         .timer-text { font-size: 4rem; font-weight: bold; color: #d93025; text-align: center; margin: 30px 0; }
@@ -40,93 +34,89 @@
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h1>감각 불일치와 멀미 연관성 연구<br><span style="font-size: 1.2rem; color: #666;">(Sensory Mismatch & Sickness Study)</span></h1>
-
-    <div id="step1">
-        <h3>참여자 정보 입력</h3>
-        <div class="input-group">
-            <label>피험자 식별 코드 (숫자 입력)</label>
-            <input type="number" id="subjectId" placeholder="예: 1, 2, 3...">
-        </div>
-        <div class="input-group" style="display:flex; gap:10px;">
-            <div style="flex:1;"><label>이름</label><input type="text" id="userName" placeholder="실명을 입력하세요"></div>
-            <div style="flex:1;"><label>나이</label><input type="number" id="userAge" placeholder="만 나이"></div>
-            <div style="flex:1;"><label>성별</label>
-                <select id="userGender">
-                    <option value="남성">남성</option><option value="여성">여성</option><option value="기타">기타</option>
-                </select>
+    <div class="card">
+        <h1>감각 불일치와 멀미 연관성 연구<br><span style="font-size: 1.2rem; color: #666;">(Sensory Mismatch & Sickness Study)</span></h1>
+        
+        <div id="step1">
+            <h3>참여자 정보 입력</h3>
+            <div class="input-group">
+                <label>피험자 식별 코드 (숫자 입력)</label>
+                <input type="number" id="subjectId" placeholder="예: 1, 2, 3...">
             </div>
+            <div class="input-group" style="display:flex; gap:10px;">
+                <div style="flex:1;"><label>이름</label><input type="text" id="userName" placeholder="실명을 입력하세요"></div>
+                <div style="flex:1;"><label>나이</label><input type="number" id="userAge" placeholder="만 나이"></div>
+                <div style="flex:1;"><label>성별</label>
+                    <select id="userGender">
+                        <option value="남성">남성</option><option value="여성">여성</option><option value="기타">기타</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="goToPreSurvey()" class="btn">다음 단계로 (사전 설문)</button>
         </div>
-        <button onclick="goToPreSurvey()" class="btn">다음 단계로 (사전 설문)</button>
-    </div>
 
-    <div id="stepPreSurvey" class="hidden">
-        <h2>📋 [실험 전] 사전 설문지</h2>
-        <p class="text-center survey-note">참가자의 당일 신체 컨디션 점검 및 기저 멀미 민감도를 파악하기 위함입니다.</p>
-        <h3>1. 기본 컨디션 점검</h3>
-        <div class="survey-q"><p>1-1. 어젯밤 수면 시간은 대략 몇 시간입니까?</p><input type="number" id="pre_sleep" step="0.5" placeholder="예: 7.5"></div>
-        <div class="survey-q"><p>1-2. 현재 체감하는 피로도를 평가해 주세요. (0~10)</p><input type="number" id="pre_fatigue" min="0" max="10" placeholder="0~10 숫자"></div>
-        <div class="survey-q"><p>1-3. 최근 24시간 이내에 신경계에 영향을 줄 수 있는 약물을 복용하셨습니까?</p>
-            <div class="radio-group"><label><input type="radio" name="pre_drug" value="예"> 예</label><label><input type="radio" name="pre_drug" value="아니오" checked> 아니오</label></div>
+        <div id="stepPreSurvey" class="hidden">
+            <h2>📋 [실험 전] 사전 설문지</h2>
+            <p class="text-center survey-note">참가자의 당일 신체 컨디션 점검 및 기저 멀미 민감도를 파악하기 위함입니다.</p>
+            <h3>1. 기본 컨디션 점검</h3>
+            <div class="survey-q"><p>1-1. 어젯밤 수면 시간은 대략 몇 시간입니까?</p><input type="number" id="pre_sleep" step="0.5" placeholder="예: 7.5"></div>
+            <div class="survey-q"><p>1-2. 현재 체감하는 피로도를 평가해 주세요. (0~10)</p><input type="number" id="pre_fatigue" min="0" max="10" placeholder="0~10 숫자"></div>
+            <div class="survey-q"><p>1-3. 최근 24시간 이내에 신경계에 영향을 줄 수 있는 약물을 복용하셨습니까?</p>
+                <div class="radio-group"><label><input type="radio" name="pre_drug" value="예"> 예</label><label><input type="radio" name="pre_drug" value="아니오" checked> 아니오</label></div>
+            </div>
+            <div class="survey-q"><p>1-4. 실험 시작 전 2시간 이내에 카페인 음료를 섭취하셨습니까?</p>
+                <div class="radio-group"><label><input type="radio" name="pre_caf" value="예"> 예</label><label><input type="radio" name="pre_caf" value="아니오" checked> 아니오</label></div>
+            </div>
+            <h3>2. 멀미 민감도 평가 (Modified MSSQ-Short)</h3>
+            <p class="survey-note">(0=전혀 없음 ~ 4=항상 있음)</p>
+            <div id="mssq_container"></div>
+            <button onclick="submitPreSurvey()" class="btn">설문 제출 및 안내사항 보기</button>
         </div>
-        <div class="survey-q"><p>1-4. 실험 시작 전 2시간 이내에 카페인 음료를 섭취하셨습니까?</p>
-            <div class="radio-group"><label><input type="radio" name="pre_caf" value="예"> 예</label><label><input type="radio" name="pre_caf" value="아니오" checked> 아니오</label></div>
+
+        <div id="stepPre" class="hidden text-center">
+            <h2>실험 준비 완료</h2>
+            <div class="alert-box">
+                <p style="font-size:1.4rem; line-height:1.6; font-weight:bold; color:#1a73e8; margin-top: 0;">🎧 주의: 반드시 '유선 이어폰'이나 '유선 헤드셋'을 착용해 주세요!</p>
+                <p style="color:#d93025; font-weight:bold; font-size:1.2rem; margin-bottom: 0;">🚨 [안내] 마지막에 파일(ZIP)을 꼭 담당자에게 전송해 주세요.</p>
+            </div>
+            <p style="color:#333; font-weight:bold; font-size:1.1rem;">※ 문장이 나타나면 즉시 녹음이 시작됩니다.</p>
+            <button class="btn btn-secondary" onclick="startBlock()">첫 번째 세션 시작</button>
         </div>
-        <h3>2. 멀미 민감도 평가 (Modified MSSQ-Short)</h3>
-        <p class="survey-note">(0=전혀 없음 ~ 4=항상 있음)</p>
-        <div id="mssq_container"></div>
-        <button onclick="submitPreSurvey()" class="btn">설문 제출 및 안내사항 보기</button>
-    </div>
 
-    <div id="stepPre" class="hidden text-center">
-        <h2>실험 준비 완료</h2>
-        <div class="alert-box">
-            <p style="font-size:1.4rem; line-height:1.6; font-weight:bold; color:#1a73e8; margin-top: 0;">🎧 주의: 반드시 '유선 이어폰'이나 '유선 헤드셋'을 착용해 주세요!</p>
-            <p style="color:#d93025; font-weight:bold; font-size:1.2rem; margin-bottom: 0;">🚨 [안내] 마지막에 파일(ZIP)을 꼭 담당자에게 전송해 주세요.</p>
+        <div id="stepReading" class="hidden">
+            <h3 id="currentPhaseTitle" style="text-align:center; display:block; border:none;"></h3>
+            <p style="text-align:center; color:#666;">현재 문장: <span id="verseCount">1</span>/21</p>
+            <div id="timeProgressBarContainer"><div id="timeProgressBar"></div></div>
+            <p id="recordingStatus" style="text-align:center; font-weight:bold; margin-top:0; color:#d93025;">🔴 녹음 중... 큰 소리로 읽어주세요.</p>
+            <div id="verseDisplay" class="verse-box">준비 중...</div>
         </div>
-        <p style="color:#333; font-weight:bold; font-size:1.1rem;">※ 문장이 나타나면 즉시 녹음이 시작됩니다.</p>
-        <button class="btn btn-secondary" onclick="startBlock()">첫 번째 세션 시작</button>
-    </div>
 
-    <div id="stepReading" class="hidden">
-        <h3 id="currentPhaseTitle" style="text-align:center; display:block; border:none;"></h3>
-        <p style="text-align:center; color:#666;">현재 문장: <span id="verseCount">1</span>/21</p>
-        
-        <div id="timeProgressBarContainer"><div id="timeProgressBar"></div></div>
-        
-        <p id="recordingStatus" style="text-align:center; font-weight:bold; margin-top:0; color:#d93025;">🔴 녹음 중... 큰 소리로 읽어주세요.</p>
-        
-        <div id="verseDisplay" class="verse-box">준비 중...</div>
-    </div>
+        <div id="stepRating" class="hidden">
+            <h3 style="display:block; text-align:center; border:none;">방금 문장을 읽을 때 느낀 멀미/어지러움 정도</h3>
+            <p class="text-center">(0: 전혀 없음 ~ 10: 매우 심함)</p>
+            <p id="ratingTimerText" style="color: #d93025; font-weight: bold; font-size: 1.2rem; text-align: center;">남은 시간: 5초</p>
+            <div class="rating-grid" id="ratingScale"></div>
+        </div>
 
-    <div id="stepRating" class="hidden">
-        <h3 style="display:block; text-align:center; border:none;">방금 문장을 읽을 때 느낀 멀미/어지러움 정도</h3>
-        <p class="text-center">(0: 전혀 없음 ~ 10: 매우 심함)</p>
-        <p id="ratingTimerText" style="color: #d93025; font-weight: bold; font-size: 1.2rem; text-align: center;">남은 시간: 5초</p>
-        <div class="rating-grid" id="ratingScale"></div>
-    </div>
+        <div id="stepPostSurvey" class="hidden">
+            <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지</h2>
+            <div id="ssq_container"></div>
+            <div id="tlx_container"></div>
+            <div id="sensory_container"></div>
+            <button onclick="submitPostSurvey()" class="btn btn-secondary" style="margin-top:30px;">세션 설문 제출</button>
+        </div>
 
-    <div id="stepPostSurvey" class="hidden">
-        <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지</h2>
-        <div id="ssq_container"></div>
-        <div id="tlx_container"></div>
-        <div id="sensory_container"></div>
-        <button onclick="submitPostSurvey()" class="btn btn-secondary" style="margin-top:30px;">세션 설문 제출</button>
-    </div>
+        <div id="stepBreak" class="hidden">
+            <h2>1세션 종료! 10분간 휴식입니다.</h2>
+            <div class="timer-text" id="breakTimerDisplay">10:00</div>
+            <button id="startSession2Btn" class="btn" onclick="startBlock()" disabled>두 번째 세션 시작</button>
+        </div>
 
-    <div id="stepBreak" class="hidden">
-        <h2>1세션 종료! 10분간 휴식입니다.</h2>
-        <div class="timer-text" id="breakTimerDisplay">10:00</div>
-        <button id="startSession2Btn" class="btn" onclick="startBlock()" disabled>두 번째 세션 시작</button>
+        <div id="stepDone" class="hidden text-center">
+            <h2>🎉 모든 실험이 완료되었습니다! 🎉</h2>
+            <button id="downloadBtn" class="btn btn-secondary" onclick="downloadAllData()" style="font-size: 1.2rem; padding: 20px;">실험 데이터(ZIP) 다운로드하기</button>
+        </div>
     </div>
-
-    <div id="stepDone" class="hidden text-center">
-        <h2>🎉 모든 실험이 완료되었습니다! 🎉</h2>
-        <button id="downloadBtn" class="btn btn-secondary" onclick="downloadAllData()" style="font-size: 1.2rem; padding: 20px;">실험 데이터(ZIP) 다운로드하기</button>
-    </div>
-</div>
 
 <script>
     const rawVerses = [
@@ -138,15 +128,14 @@
         "단산 동동주 주조장 주조장장은 단산 동동주 주조장장이고, 탄산 동동주 주조장 주조장장은 탄산 동동주 주조장장이다.", "춘천 창촌리 창촌초등학교 창촌 동창회장 최창촌.",
         "철 칠판 판 지우개는 헌 철 칠판 판 지우개고, 천 칠판 판 지우개는 새 천 칠판 판 지우개다.", "고려고 교복은 고급 교복이고 고려고 교복은 최고급 원단이다. 고려고 교장 선생님은 고단수이고 고려고 교감 선생님은 단고수이다.",
         "신진 샹송가수의 신춘 샹송쇼, 헌 샹송가수의 헌춘 샹송쇼.", "앞 뜰 콩깍지는 깐 콩깍지, 뒷 뜰 콩깍지는 안 깐 콩깍지, 옆 뜰 콩깍지는 깔 콩깍지.",
-        "박범복군은 밤벚꽃놀이를 가고, 방범복양은 낮벚꽃놀이를 간다. 밤벚꽃은 박범복군이 좋아하고 낮벚꽃은 방범복양이 좋아한다.", "내가 그린 구름 그림은 새 구름 그린 구름 그림이고, 네가 그린 구름 그림은 단 구름 그린 구름 그림이다.",
+        "박범복군은 밤벚꽃놀이를 가고, 방범복양은 낮벚꽃놀이를 간다. 밤벚꽃은 박범복군이 좋아하고 낮벚꽃은 방범복양이 좋아한다.", "내가 그린 구름 그림은 새 구름 그린 구름 그림이고, 네가 그린 구름 그림은 헌 구름 그린 구름 그림이다.",
         "스위스에서 온 스미스씨는 스위스 산 스위스 소시지를 좋아한다. 스위스 산 소시지가 아니면 스미스씨는 스위스 소시지를 먹지 않는다.", "촉촉한 초코칩 나라에 살던 안 촉촉한 초코칩이 촉촉한 초코칩 나라의 촉촉한 초코칩을 보고 촉촉한 초코칩이 되고 싶어서 촉촉한 초코칩 나라에 갔는데...",
-        "백 법학박사님 댁 밥은 백보리 밥이고, 박 법학박사님 댁 밥은 팔보채 밥이다. 백보리 밥이든 팔보채 밥이든 법학박사님들은 다 잘 드신다."
+        "백 법학박사님 댁 밥은 백보리 밥이고, 박 법학박사님 댁 밥은 팔보채 밥이다. 백보리 밥이든 팔보채 밥이든 법학박사님들은 다 가장 잘 드신다."
     ];
-
     const mixedLatencies = [175, 150, 200, 150, 200, 175, 200, 150, 175, 150, 200, 175, 150, 200, 175, 200, 150, 175, 200, 150, 175];
     let experimentSet = [];
     rawVerses.forEach((v, i) => experimentSet.push({ text: v, latency: mixedLatencies[i] }));
-
+    
     let audioContext, workletNode, mediaRecorder, mediaStream;
     let noiseNode, noiseGain; 
     let audioChunks = [], logs = [], preSurveyData = {}, postSurveyData = [];
@@ -160,7 +149,7 @@
 
     function createRadios(id, prefix, list, max) { document.getElementById(id).innerHTML = list.map((q, i) => `<div class="survey-q"><p>${q}</p><div class="radio-group">${Array.from({length: max+1}, (_, v) => `<label><input type="radio" name="${prefix}_${i}" value="${v}"> ${v}</label>`).join('')}</div></div>`).join(''); }
     function createInputs(id, prefix, list) { document.getElementById(id).innerHTML = list.map((q, i) => `<div class="survey-q"><p>${q}</p><input type="number" id="${prefix}_${i}" min="1" max="10" placeholder="1~10 숫자"></div>`).join(''); }
-
+    
     createRadios("mssq_container", "mssq", mssqList, 4);
     createRadios("ssq_container", "ssq", ssqList, 3);
     createInputs("tlx_container", "tlx", tlxList);
@@ -192,31 +181,22 @@
         document.getElementById('stepPre').classList.add('hidden');
         document.getElementById('stepBreak').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
-        document.getElementById('currentPhaseTitle').innerText = `[${currentSessionIndex + 1}세션] 진행 중`;
+        document.getElementById('currentPhaseTitle').innerText = `[${currentSessionIndex + 1}세션] 진행 중 (${experimentFlow[currentSessionIndex] === 'control' ? '대조군' : '실험군'})`;
         playNextVerse();
     }
 
-    // 서라운드(스테레오) 백색소음 생성 로직
     function playWhiteNoise(context) {
         const bufferSize = context.sampleRate * 2;
         const noiseBuffer = context.createBuffer(2, bufferSize, context.sampleRate);
-        
-        // 양쪽 귀에 완전히 독립적인 노이즈를 넣어 공간감 형성
         for (let channel = 0; channel < 2; channel++) {
             const output = noiseBuffer.getChannelData(channel);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
-            }
+            for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
         }
-        
         noiseNode = context.createBufferSource();
         noiseNode.buffer = noiseBuffer;
         noiseNode.loop = true;
         noiseGain = context.createGain();
-        
-        // 백색소음 볼륨 조절 부분
-        noiseGain.gain.value = 0.05; 
-        
+        noiseGain.gain.value = 0.08; // 백색소음 0.08 설정
         noiseNode.connect(noiseGain).connect(context.destination);
         noiseNode.start();
     }
@@ -231,23 +211,32 @@
         const isControl = experimentFlow[currentSessionIndex] === 'control';
         
         document.getElementById('verseCount').innerText = currentVerseIndex + 1;
-        document.getElementById('verseDisplay').innerText = data.text; // 문장 바로 띄움
+        document.getElementById('verseDisplay').innerText = data.text;
         
         const bar = document.getElementById('timeProgressBar');
         bar.style.width = "100%";
 
         if(audioContext) await audioContext.close();
         audioContext = new AudioContext();
-        try { mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); } 
-        catch(e) { return alert("마이크 권한이 필요합니다."); }
+        
+        try { 
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); 
+        } catch(e) { 
+            return alert("마이크 권한이 필요합니다."); 
+        }
 
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        await audioContext.audioWorklet.addModule('processor.js');
+        workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
+        workletNode.port.postMessage(isControl ? 0 : data.latency);
+
+        // 목소리 볼륨 증폭 설정 (3.0배)
         const voiceGain = audioContext.createGain();
-        voiceGain.gain.value = 3.0; // 1.0이 원본 크기, 2.0은 두 배 증폭, 3.0은 세 배 증폭
-
-        // source -> 지연 처리기(workletNode) -> 볼륨 조절기(voiceGain) -> 이어폰(destination) 순서로 연결
+        voiceGain.gain.value = 3.0; 
+        
+        // 올바른 단일 연결 파이프라인
         source.connect(workletNode).connect(voiceGain).connect(audioContext.destination);
 
-        // 녹음 및 문장 읽기가 시작됨과 동시에 배경 서라운드 백색소음 재생
         playWhiteNoise(audioContext);
 
         audioChunks = [];
@@ -272,7 +261,7 @@
         clearTimeout(readingTimer);
         readingTimer = setTimeout(() => {
             clearInterval(progressInterval);
-            stopWhiteNoise(); // 제한 시간이 끝나면 백색소음도 멈춤
+            stopWhiteNoise(); 
             mediaRecorder.stop();
             mediaStream.getTracks().forEach(t => t.stop()); 
         }, totalDurationMs);
