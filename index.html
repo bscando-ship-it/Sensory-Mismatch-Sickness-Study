@@ -82,6 +82,7 @@
                 <p style="font-size:1.4rem; line-height:1.6; font-weight:bold; color:#1a73e8; margin-top: 0;">🎧 주의: 반드시 '유선 이어폰'이나 '유선 헤드셋'을 착용해 주세요!</p>
                 <p style="color:#d93025; font-weight:bold; font-size:1.2rem; margin-bottom: 0;">🚨 [안내] 마지막에 파일(ZIP)을 꼭 담당자에게 전송해 주세요.</p>
             </div>
+            <p style="color:#333; font-weight:bold; font-size:1.2rem; background-color:#fff3cd; padding:10px; border-radius:8px;">※ 귀에서 백색소음(치지직 거리는 소리)이 들리면 문장을 읽기 시작해주세요.</p>
             <p style="color:#333; font-weight:bold; font-size:1.1rem;">※ 문장이 나타나면 즉시 녹음이 시작됩니다.</p>
             <button class="btn btn-secondary" onclick="startBlock()">첫 번째 세션 시작</button>
         </div>
@@ -155,6 +156,7 @@
     let audioChunks = [], logs = [], preSurveyData = {}, postSurveyData = [];
     let zip = new JSZip(), subjectId = 0, experimentFlow = [], currentSessionIndex = 0, currentVerseIndex = 0;
     let readingTimer, progressInterval, ratingTimeout, ratingInterval;
+    let selectedScore = -1; // 타이머 완료 전 사용자가 선택한 점수를 담아둘 변수
 
     const mssqList = ["2-1. 자동차 탑승 시", "2-2. 버스 탑승 시", "2-3. 배(선박) 탑승 시", "2-4. 비행기 탑승 시", "2-5. 놀이기구(회전목마, 롤러코스터 등) 탑승 시", "2-6. VR 기기 착용 또는 3D 게임 플레이 시"];
     const ssqList = [
@@ -215,7 +217,6 @@
         document.getElementById('stepBreak').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
         
-        // 요구사항 3: 대조군/실험군 텍스트 대신 식별 코드가 노출되도록 변경
         document.getElementById('currentPhaseTitle').innerText = `[${currentSessionIndex + 1}세션] 진행 중 (식별 코드: ${subjectId})`;
         playNextVerse();
     }
@@ -231,7 +232,7 @@
         noiseNode.buffer = noiseBuffer;
         noiseNode.loop = true;
         noiseGain = context.createGain();
-        noiseGain.gain.value = 0.04; // 백색소음 설정
+        noiseGain.gain.value = 0.04; 
         noiseNode.connect(noiseGain).connect(context.destination);
         noiseNode.start();
     }
@@ -253,9 +254,9 @@
 
         if(audioContext) await audioContext.close();
         audioContext = new AudioContext({
-            latencyHint: 'interactive', // 최대한 지연 시간을 줄이도록 설정
-            sampleRate: 44100           // 표준 샘플 레이트 고정
-                });
+            latencyHint: 'interactive',
+            sampleRate: 44100
+        });
         
         try { 
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); 
@@ -269,10 +270,8 @@
         workletNode.port.postMessage(isControl ? 0 : data.latency);
         
         if (isControl) {
-            // 대조군: 워클렛(프로세서)을 거치지 않고 바로 목적지로 연결
             source.connect(audioContext.destination);
         } else {
-            // 실험군: 워클렛을 거쳐 Latency 적용 후 연결
             source.connect(workletNode).connect(audioContext.destination);
         }
 
@@ -286,7 +285,6 @@
         const timestamp = new Date().toISOString(); 
         mediaRecorder.start();
         
-        // 요구사항 1: audioContext.baseLatency 값을 tempLogData에 추가하여 로그 기록
         window.tempLogData = { 
             subjectId, 
             name: document.getElementById('userName').value, 
@@ -320,21 +318,51 @@
     function showRatingScreen() {
         document.getElementById('stepReading').classList.add('hidden');
         document.getElementById('stepRating').classList.remove('hidden');
+        
+        selectedScore = -1; // 이전 선택값 초기화
         const scale = document.getElementById('ratingScale');
         scale.innerHTML = '';
+        
         for(let i=0; i<=10; i++) {
-            let b = document.createElement('button'); b.className = 'rating-btn'; b.innerText = i; b.onclick = () => submitRating(i); scale.appendChild(b);
+            let b = document.createElement('button'); 
+            b.className = 'rating-btn'; 
+            b.innerText = i; 
+            
+            // 즉각 넘어가지 않고 값만 저장 및 버튼 색상 변경 로직 추가
+            b.onclick = () => {
+                selectedScore = i;
+                Array.from(scale.children).forEach(btn => {
+                    btn.style.background = 'white';
+                    btn.style.color = '#333';
+                });
+                b.style.background = '#1a73e8';
+                b.style.color = 'white';
+            }; 
+            scale.appendChild(b);
         }
+        
         let timeLeft = 5;
-        const timerText = document.getElementById('ratingTimerText'); timerText.innerText = `남은 시간: ${timeLeft}초`;
-        clearInterval(ratingInterval); ratingInterval = setInterval(() => { timeLeft--; timerText.innerText = `남은 시간: ${timeLeft}초`; }, 1000);
-        clearTimeout(ratingTimeout); ratingTimeout = setTimeout(() => { submitRating(-1); }, 5000);
+        const timerText = document.getElementById('ratingTimerText'); 
+        timerText.innerText = `남은 시간: ${timeLeft}초`;
+        
+        clearInterval(ratingInterval); 
+        ratingInterval = setInterval(() => { 
+            timeLeft--; 
+            timerText.innerText = `남은 시간: ${timeLeft}초`; 
+        }, 1000);
+        
+        clearTimeout(ratingTimeout); 
+        // 5초가 모두 지난 후에 저장해둔 selectedScore와 함께 실제 submitRating을 실행함
+        ratingTimeout = setTimeout(() => { 
+            submitRating(selectedScore); 
+        }, 5000);
     }
 
     function submitRating(score) {
-        clearTimeout(ratingTimeout); clearInterval(ratingInterval);
+        clearInterval(ratingInterval);
         window.tempLogData.score = score === -1 ? '미응답' : score;
-        logs.push(window.tempLogData); currentVerseIndex++;
+        logs.push(window.tempLogData); 
+        currentVerseIndex++;
         document.getElementById('stepRating').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
         playNextVerse();
@@ -373,7 +401,6 @@
         const btn = document.getElementById('downloadBtn'); btn.innerText = "압축 중..."; btn.disabled = true; btn.style.background = "#ccc";
         const userName = document.getElementById('userName').value;
         
-        // 요구사항 1 반영: CSV 헤더와 데이터 줄에 기초지연시간(s) 항목 추가
         let logCsv = "식별코드,이름,세션,모드,문장,지연시간(ms),기초지연시간(s),멀미점수,타임스탬프\n"; 
         logs.forEach(r => logCsv += `${r.subjectId},"${r.name}",${r.session},${r.mode},"${r.verse}",${r.appliedLat},${r.baseLatency},${r.score},${r.timestamp}\n`); 
         zip.file(`1_DAF_Logs_ID${subjectId}_${userName}.csv`, "\ufeff" + logCsv);
