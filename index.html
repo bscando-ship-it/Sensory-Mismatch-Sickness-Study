@@ -31,6 +31,9 @@
         #timeProgressBar { width: 100%; height: 100%; background: #d93025; transition: width 0.1s linear; }
         .timer-text { font-size: 4rem; font-weight: bold; color: #d93025; text-align: center; margin: 30px 0; }
         .alert-box { background-color: #fce8e6; border: 2px solid #d93025; border-radius: 10px; padding: 25px; margin: 20px 0; }
+        /* 생체 데이터 연결 알림용 스타일 */
+        .sensor-box { background: #e8f0fe; border: 2px solid #1a73e8; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .sensor-status { font-weight: bold; color: #d93025; font-size: 1.1rem; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -38,6 +41,12 @@
         <h1>감각 불일치와 멀미 연관성 연구<br><span style="font-size: 1.2rem; color: #666;">(Sensory Mismatch & Sickness Study)</span></h1>
         
         <div id="step1">
+            <div class="sensor-box">
+                <p style="margin:0 0 10px 0; font-weight:bold;">🔌 아두이노 센서(GSR/HRV) 연결</p>
+                <button onclick="connectArduino()" class="btn btn-secondary" style="width:auto; padding:10px 20px; margin-top:0;">포트 연결하기</button>
+                <div id="arduinoStatus" class="sensor-status">현재 연결 안 됨 (필요시 먼저 연결하세요)</div>
+            </div>
+
             <h3>참여자 정보 입력</h3>
             <div class="input-group">
                 <label>피험자 식별 코드 (숫자 입력)</label>
@@ -60,7 +69,6 @@
             <p class="survey-note"><strong>목적:</strong> 참가자의 당일 신체 컨디션 점검 및 기저 멀미 민감도(Modified MSSQ) 파악</p>
             
             <h3>1. 기본 컨디션 점검</h3>
-            <p class="survey-note">실험 참가 전, 현재의 상태에 대해 사실대로 기재해 주십시오.</p>
             <div class="survey-q"><p>1-1. 어젯밤 수면 시간은 대략 몇 시간입니까?</p><input type="number" id="pre_sleep" step="0.5" placeholder="예: 7.5"></div>
             <div class="survey-q"><p>1-2. 현재 체감하는 피로도를 평가해 주세요.<br><span style="font-size:0.9rem; color:#666;">(0: 전혀 피로하지 않음 ~ 10: 매우 피로함)</span></p><input type="number" id="pre_fatigue" min="0" max="10" placeholder="0~10 숫자"></div>
             <div class="survey-q"><p>1-3. 최근 24시간 이내에 멀미약, 수면제, 감기약 등 신경계에 영향을 줄 수 있는 약물을 복용하셨습니까?</p>
@@ -107,15 +115,12 @@
             <p class="survey-note"><strong>목적:</strong> 대조군/실험군 각 세션(21문장 낭독) 종료 직후 실시. 신체적 증상(Modified SSQ), 인지 부하(NASA-TLX), 감각 통제력 파악.</p>
 
             <h3>Part 1. 신체 및 자율신경계 반응 평가 (Modified SSQ)</h3>
-            <p class="survey-note">방금 진행한 세션 동안 다음 증상들을 얼마나 느꼈는지 체크해 주세요.<br><strong>(척도: 0=전혀 없음 / 1=약간 / 2=보통 / 3=심함)</strong></p>
             <div id="ssq_container"></div>
 
             <h3>Part 2. 인지적 스트레스 및 작업 부하 평가 (Modified NASA-TLX)</h3>
-            <p class="survey-note">방금 진행한 낭독 과제에 대해 아래 항목을 평가해 주세요.<br><strong>(척도: 1점=매우 낮음 ~ 10점=매우 높음)</strong></p>
             <div id="tlx_container"></div>
 
             <h3>Part 3. 감각 불일치 및 통제력 경험</h3>
-            <p class="survey-note">본 실험의 특수한 청각 환경과 관련하여, 다음 항목을 평가해 주세요.<br><strong>(척도: 1점=전혀 그렇지 않다 ~ 10점=매우 그렇다)</strong></p>
             <div id="sensory_container"></div>
 
             <button onclick="submitPostSurvey()" class="btn btn-secondary" style="margin-top:30px;">세션 설문 제출</button>
@@ -156,31 +161,74 @@
     let audioChunks = [], logs = [], preSurveyData = {}, postSurveyData = [];
     let zip = new JSZip(), subjectId = 0, experimentFlow = [], currentSessionIndex = 0, currentVerseIndex = 0;
     let readingTimer, progressInterval, ratingTimeout, ratingInterval;
-    let selectedScore = -1; // 타이머 완료 전 사용자가 선택한 점수를 담아둘 변수
+    let selectedScore = -1; 
 
-    const mssqList = ["2-1. 자동차 탑승 시", "2-2. 버스 탑승 시", "2-3. 배(선박) 탑승 시", "2-4. 비행기 탑승 시", "2-5. 놀이기구(회전목마, 롤러코스터 등) 탑승 시", "2-6. VR 기기 착용 또는 3D 게임 플레이 시"];
-    const ssqList = [
-        "<b>[위장 및 소화기 계열]</b><br>1-1. 전반적인 위장 불편감 (속이 불편하거나 울렁거림)", 
-        "<b>[위장 및 소화기 계열]</b><br>1-2. 메스꺼움 (구역질이 날 것 같은 느낌)", 
-        "<b>[위장 및 소화기 계열]</b><br>1-3. 침 분비의 증가 (평소보다 입에 침이 고이는 느낌)", 
-        "<b>[어지럼증 및 방향감각 계열]</b><br>1-4. 머리가 멍하거나 무거운 느낌 (두중감)", 
-        "<b>[어지럼증 및 방향감각 계열]</b><br>1-5. 어지럼증 또는 현기증 (주변이나 내 몸이 도는 느낌)", 
-        "<b>[어지럼증 및 방향감각 계열]</b><br>1-6. 공간 내에서 방향감각이나 균형을 잃은 느낌", 
-        "<b>[자율신경계 반응 계열]</b><br>1-7. 식은땀 (이마나 손바닥 등에 갑자기 땀이 나는 느낌)", 
-        "<b>[자율신경계 반응 계열]</b><br>1-8. 심박수 증가 (가슴이 두근거리거나 심장이 빨리 뛰는 느낌)", 
-        "<b>[자율신경계 반응 계열]</b><br>1-9. 두통 또는 관자놀이 부근의 압박감"
-    ];
-    const tlxList = [
-        "2-1. 정신적 요구: 혀가 꼬이는 문장을 틀리지 않고 읽기 위해 정신적으로 얼마나 많은 집중력이 필요했습니까?", 
-        "2-2. 시간적 요구: 제한 시간 내에 문장을 다 읽어야 한다는 시간적 압박감이나 촉박함을 얼마나 느꼈습니까?", 
-        "2-3. 수행 평가: 방금 수행한 낭독 결과(정확도 및 속도)에 대해 스스로 얼마나 만족하십니까? (주의: 1점=매우 만족 ~ 10점=매우 불만족)", 
-        "2-4. 노력: 해당 과제에서 본인이 원하는 수준의 성과를 내기 위해 육체적/정신적으로 얼마나 열심히 노력해야 했습니까?", 
-        "2-5. 좌절감: 과제를 수행하는 동안 얼마나 당혹감, 불안감, 짜증, 또는 스트레스를 느꼈습니까?"
-    ];
-    const sensList = [
-        "3-1. 통제력 상실: 내가 말을 하고 있음에도 불구하고, 내 목소리나 발음이 내 통제를 벗어난 것 같은 느낌을 받았습니까?", 
-        "3-2. 발성 피로도: 평소처럼 말하기 위해 평소보다 입 모양, 혀의 움직임, 또는 호흡에 더 많은 힘(물리적 노력)을 주어야 했습니까?"
-    ];
+    // ======== [아두이노 센서 데이터 연동 로직 시작] ========
+    let serialPort, serialReader;
+    let biosignals = []; // 수집된 생체 데이터를 저장할 배열
+    let currentPhase = "Setup"; // 분석 시 동기화를 위한 현재 실험 단계 마커
+
+    async function connectArduino() {
+        if (!('serial' in navigator)) {
+            alert("이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 또는 Edge를 사용해주세요.");
+            return;
+        }
+        try {
+            serialPort = await navigator.serial.requestPort();
+            await serialPort.open({ baudRate: 115200 }); // 아두이노 코드의 속도와 일치시킴
+            
+            const statusDiv = document.getElementById('arduinoStatus');
+            statusDiv.innerText = "✅ 아두이노 정상 연결됨! (데이터 수신 중)";
+            statusDiv.style.color = "#1a73e8";
+            
+            readSerialData(); // 백그라운드 데이터 수집 시작
+        } catch (error) {
+            console.error("포트 열기 에러:", error);
+            alert("연결 취소 또는 오류가 발생했습니다.");
+        }
+    }
+
+    async function readSerialData() {
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+        serialReader = textDecoder.readable.getReader();
+        let buffer = "";
+
+        try {
+            while (true) {
+                const { value, done } = await serialReader.read();
+                if (done) break;
+                
+                buffer += value;
+                let lines = buffer.split('\n');
+                buffer = lines.pop(); // 완전하지 않은 마지막 줄은 버퍼에 다시 보관
+
+                let webTimestamp = Date.now(); // 웹에서의 정확한 타임스탬프
+                
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line && !line.includes("Time_ms")) { // 비어있지 않고 헤더가 아니면
+                        let parts = line.split(',');
+                        if (parts.length === 3) { // 포맷이 아두이노(Time, GSR, HRV)와 일치하면
+                            // [아두이노시간, GSR, HRV, 웹타임스탬프, 현재실험단계] 형태로 배열에 저장
+                            biosignals.push(`${parts[0]},${parts[1]},${parts[2]},${webTimestamp},${currentPhase}`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("데이터 읽기 에러:", error);
+            document.getElementById('arduinoStatus').innerText = "⚠️ 아두이노 연결 끊김!";
+            document.getElementById('arduinoStatus').style.color = "#d93025";
+        }
+    }
+    // ======== [아두이노 센서 데이터 연동 로직 끝] ========
+
+
+    const mssqList = ["2-1. 자동차 탑승 시", "2-2. 버스 탑승 시", "2-3. 배 탑승 시", "2-4. 비행기 탑승 시", "2-5. 놀이기구 탑승 시", "2-6. VR/3D 게임 시"];
+    const ssqList = ["1-1. 전반적인 위장 불편감", "1-2. 메스꺼움", "1-3. 침 분비의 증가", "1-4. 머리가 멍하거나 무거운 느낌", "1-5. 어지럼증 또는 현기증", "1-6. 방향감각이나 균형 상실감", "1-7. 식은땀", "1-8. 심박수 증가", "1-9. 두통 또는 압박감"];
+    const tlxList = ["2-1. 정신적 요구", "2-2. 시간적 요구", "2-3. 수행 평가 (1점:만족~10점:불만족)", "2-4. 노력", "2-5. 좌절감"];
+    const sensList = ["3-1. 통제력 상실 느낌", "3-2. 발성 피로도 (물리적 노력 증가)"];
 
     function createRadios(id, prefix, list, max) { document.getElementById(id).innerHTML = list.map((q, i) => `<div class="survey-q"><p>${q}</p><div class="radio-group">${Array.from({length: max+1}, (_, v) => `<label><input type="radio" name="${prefix}_${i}" value="${v}"> ${v}</label>`).join('')}</div></div>`).join(''); }
     function createInputs(id, prefix, list) { document.getElementById(id).innerHTML = list.map((q, i) => `<div class="survey-q"><p>${q}</p><input type="number" id="${prefix}_${i}" min="1" max="10" placeholder="1~10 숫자 입력"></div>`).join(''); }
@@ -193,6 +241,9 @@
     function goToPreSurvey() {
         subjectId = document.getElementById('subjectId').value;
         if(!subjectId || !document.getElementById('userName').value) return alert("식별 코드와 이름을 모두 입력해주세요.");
+        
+        currentPhase = "PreSurvey"; // 생체 데이터 상태 라벨 변경
+        
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('stepPreSurvey').classList.remove('hidden');
     }
@@ -207,6 +258,9 @@
         }
         subjectId = parseInt(subjectId);
         experimentFlow = (subjectId % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
+        
+        currentPhase = "ReadyWait"; // 생체 데이터 상태 라벨 변경
+
         document.getElementById('stepPreSurvey').classList.add('hidden');
         document.getElementById('stepPre').classList.remove('hidden');
     }
@@ -246,6 +300,9 @@
         const data = experimentSet[currentVerseIndex];
         const isControl = experimentFlow[currentSessionIndex] === 'control';
         
+        // 생체 데이터 동기화를 위해 현재 세션과 문장 번호 기록
+        currentPhase = `Session${currentSessionIndex+1}_${isControl?'Ctrl':'Test'}_Verse${currentVerseIndex+1}`;
+
         document.getElementById('verseCount').innerText = currentVerseIndex + 1;
         document.getElementById('verseDisplay').innerText = data.text;
         
@@ -253,10 +310,7 @@
         bar.style.width = "100%";
 
         if(audioContext) await audioContext.close();
-        audioContext = new AudioContext({
-            latencyHint: 'interactive',
-            sampleRate: 44100
-        });
+        audioContext = new AudioContext({ latencyHint: 'interactive', sampleRate: 44100 });
         
         try { 
             mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); 
@@ -269,11 +323,7 @@
         workletNode = new AudioWorkletNode(audioContext, 'daf-processor');
         workletNode.port.postMessage(isControl ? 0 : data.latency);
         
-        if (isControl) {
-            source.connect(audioContext.destination);
-        } else {
-            source.connect(workletNode).connect(audioContext.destination);
-        }
+        if (isControl) { source.connect(audioContext.destination); } else { source.connect(workletNode).connect(audioContext.destination); }
 
         playWhiteNoise(audioContext);
 
@@ -286,14 +336,8 @@
         mediaRecorder.start();
         
         window.tempLogData = { 
-            subjectId, 
-            name: document.getElementById('userName').value, 
-            session: currentSessionIndex + 1, 
-            mode: isControl ? 'Control' : 'Test', 
-            verse: data.text, 
-            appliedLat: isControl ? 0 : data.latency, 
-            baseLatency: audioContext.baseLatency || 0, 
-            timestamp 
+            subjectId, name: document.getElementById('userName').value, session: currentSessionIndex + 1, mode: isControl ? 'Control' : 'Test', 
+            verse: data.text, appliedLat: isControl ? 0 : data.latency, baseLatency: audioContext.baseLatency || 0, timestamp 
         };
 
         const totalDurationMs = (data.text.length * 200) + 2000;
@@ -316,10 +360,12 @@
     }
 
     function showRatingScreen() {
+        currentPhase = `Session${currentSessionIndex+1}_Rating${currentVerseIndex+1}`; // 별점 평가 시간 라벨링
+
         document.getElementById('stepReading').classList.add('hidden');
         document.getElementById('stepRating').classList.remove('hidden');
         
-        selectedScore = -1; // 이전 선택값 초기화
+        selectedScore = -1; 
         const scale = document.getElementById('ratingScale');
         scale.innerHTML = '';
         
@@ -328,15 +374,10 @@
             b.className = 'rating-btn'; 
             b.innerText = i; 
             
-            // 즉각 넘어가지 않고 값만 저장 및 버튼 색상 변경 로직 추가
             b.onclick = () => {
                 selectedScore = i;
-                Array.from(scale.children).forEach(btn => {
-                    btn.style.background = 'white';
-                    btn.style.color = '#333';
-                });
-                b.style.background = '#1a73e8';
-                b.style.color = 'white';
+                Array.from(scale.children).forEach(btn => { btn.style.background = 'white'; btn.style.color = '#333'; });
+                b.style.background = '#1a73e8'; b.style.color = 'white';
             }; 
             scale.appendChild(b);
         }
@@ -352,10 +393,7 @@
         }, 1000);
         
         clearTimeout(ratingTimeout); 
-        // 5초가 모두 지난 후에 저장해둔 selectedScore와 함께 실제 submitRating을 실행함
-        ratingTimeout = setTimeout(() => { 
-            submitRating(selectedScore); 
-        }, 5000);
+        ratingTimeout = setTimeout(() => { submitRating(selectedScore); }, 5000);
     }
 
     function submitRating(score) {
@@ -369,8 +407,10 @@
     }
 
     function endBlock() {
+        currentPhase = `Session${currentSessionIndex+1}_PostSurvey`; // 종료 설문 시간 라벨링
+
         document.getElementById('stepReading').classList.add('hidden');
-        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료 후] 종합 설문지 (Post-Session Questionnaire)`;
+        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료 후] 종합 설문지`;
         document.querySelectorAll('#stepPostSurvey input[type=radio]').forEach(e => e.checked = false);
         document.querySelectorAll('#stepPostSurvey input[type=number]').forEach(e => e.value = '');
         document.getElementById('stepPostSurvey').classList.remove('hidden');
@@ -379,14 +419,21 @@
     function submitPostSurvey() {
         let sessionData = { session: currentSessionIndex + 1, mode: experimentFlow[currentSessionIndex] };
         for(let i=0; i<ssqList.length; i++) { let el = document.querySelector(`input[name="ssq_${i}"]:checked`); if(!el) return alert("SSQ 항목을 체크해주세요."); sessionData[`ssq_${i+1}`] = el.value; }
-        for(let i=0; i<tlxList.length; i++) { let el = document.getElementById(`tlx_${i}`); if(!el.value) return alert("NASA-TLX 항목을 모두 입력해주세요."); sessionData[`tlx_${i+1}`] = el.value; }
-        for(let i=0; i<sensList.length; i++) { let el = document.getElementById(`sens_${i}`); if(!el.value) return alert("감각 항목을 모두 입력해주세요."); sessionData[`sens_${i+1}`] = el.value; }
+        for(let i=0; i<tlxList.length; i++) { let el = document.getElementById(`tlx_${i}`); if(!el.value) return alert("NASA-TLX를 입력해주세요."); sessionData[`tlx_${i+1}`] = el.value; }
+        for(let i=0; i<sensList.length; i++) { let el = document.getElementById(`sens_${i}`); if(!el.value) return alert("감각 항목을 입력해주세요."); sessionData[`sens_${i+1}`] = el.value; }
         postSurveyData.push(sessionData);
         document.getElementById('stepPostSurvey').classList.add('hidden');
-        if(currentSessionIndex === 0) { currentSessionIndex++; startBreakTime(); } else { document.getElementById('stepDone').classList.remove('hidden'); }
+        if(currentSessionIndex === 0) { 
+            currentSessionIndex++; 
+            startBreakTime(); 
+        } else { 
+            currentPhase = "Done";
+            document.getElementById('stepDone').classList.remove('hidden'); 
+        }
     }
 
     function startBreakTime() {
+        currentPhase = "BreakTime"; // 휴식 시간 라벨링
         document.getElementById('stepBreak').classList.remove('hidden');
         let timeLeft = 600; const display = document.getElementById('breakTimerDisplay'); const btn = document.getElementById('startSession2Btn'); btn.disabled = true;
         const breakInterval = setInterval(() => {
@@ -398,7 +445,7 @@
     function addAudioToZip() { zip.folder("Audio_Files").file(`ID${subjectId}_S${currentSessionIndex+1}_${experimentFlow[currentSessionIndex]}_Verse${currentVerseIndex+1}.webm`, new Blob(audioChunks, { type: 'audio/webm' })); }
 
     function downloadAllData() {
-        const btn = document.getElementById('downloadBtn'); btn.innerText = "압축 중..."; btn.disabled = true; btn.style.background = "#ccc";
+        const btn = document.getElementById('downloadBtn'); btn.innerText = "압축 및 다운로드 중..."; btn.disabled = true; btn.style.background = "#ccc";
         const userName = document.getElementById('userName').value;
         
         let logCsv = "식별코드,이름,세션,모드,문장,지연시간(ms),기초지연시간(s),멀미점수,타임스탬프\n"; 
@@ -412,6 +459,11 @@
         postSurveyData.forEach(r => postCsv += `${subjectId},${r.session},${r.mode},${r.ssq_1},${r.ssq_2},${r.ssq_3},${r.ssq_4},${r.ssq_5},${r.ssq_6},${r.ssq_7},${r.ssq_8},${r.ssq_9},${r.tlx_1},${r.tlx_2},${r.tlx_3},${r.tlx_4},${r.tlx_5},${r.sens_1},${r.sens_2}\n`); 
         zip.file(`3_PostSurvey_ID${subjectId}_${userName}.csv`, "\ufeff" + postCsv);
         
+        // [아두이노 센서 데이터 CSV 파일 생성 추가]
+        let bioCsv = "Arduino_Time(ms),GSR_Raw,HRV_IR,Web_Timestamp(ms),Experiment_Phase\n";
+        biosignals.forEach(r => bioCsv += `${r}\n`);
+        zip.file(`4_Biosignals_ID${subjectId}_${userName}.csv`, "\ufeff" + bioCsv);
+
         zip.generateAsync({ type: "blob" }).then(content => { 
             const link = document.createElement("a"); 
             link.href = URL.createObjectURL(content); 
