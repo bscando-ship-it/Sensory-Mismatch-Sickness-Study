@@ -325,85 +325,92 @@
     }
 
     async function playNextVerse() {
-        if (currentVerseIndex >= verseData.length) {
-            currentSessionIndex++;
-            currentVerseIndex = 0;
-            if (currentSessionIndex < 2) {
-                alert("첫 번째 세션이 끝났습니다. 잠시 휴식 후 다음 세션을 시작합니다.");
-                startSession();
-            } else {
-                alert("모든 실험이 완료되었습니다. 데이터를 다운로드합니다.");
-                downloadAllData();
+        try {
+            if (currentVerseIndex >= verseData.length) {
+                currentSessionIndex++;
+                currentVerseIndex = 0;
+                if (currentSessionIndex < 2) {
+                    alert("첫 번째 세션이 끝났습니다. 잠시 휴식 후 다음 세션을 시작합니다.");
+                    startSession();
+                } else {
+                    alert("모든 실험이 완료되었습니다. 데이터를 다운로드합니다.");
+                    downloadAllData();
+                }
+                return;
             }
-            return;
+
+            const data = verseData[currentVerseIndex];
+            const isControl = (currentSessionIndex === 0);
+
+            // 1. 기초 지연시간 보정 (audioContext가 없을 때를 대비한 안전장치 포함)
+            const currentBaseMs = (typeof audioContext !== 'undefined' && audioContext !== null) 
+                                  ? Math.round((audioContext.baseLatency || 0) * 1000) : 0;
+            const targetLat = isControl ? 0 : data.latency;
+            const finalLatencyForAudio = isControl ? 0 : Math.max(0, targetLat - currentBaseMs);
+            
+            // ★ 에러 해결 핵심: workletNode가 실제로 활성화되어 있을 때만 데이터를 보냄
+            if (typeof workletNode !== 'undefined' && workletNode !== null) {
+                workletNode.port.postMessage(finalLatencyForAudio);
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            }});
+            mediaStream = stream;
+            const source = audioContext.createMediaStreamSource(stream);
+
+            if (isControl) {
+                source.connect(audioContext.destination);
+            } else {
+                // Test 모드여도 만약을 대비한 연결 안전장치
+                if (typeof workletNode !== 'undefined' && workletNode !== null) {
+                    source.connect(workletNode).connect(audioContext.destination);
+                } else {
+                    source.connect(audioContext.destination);
+                }
+            }
+
+            playWhiteNoise(audioContext);
+
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(mediaStream);
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => { addAudioToZip(); showRatingScreen(); };
+
+            const timestamp = new Date().toISOString();
+            mediaRecorder.start();
+
+            window.tempLogData = { 
+                subjectId, 
+                name: document.getElementById('userName').value, 
+                session: currentSessionIndex + 1, 
+                mode: isControl ? 'Control' : 'Test', 
+                verse: data.text, 
+                appliedLat: targetLat, // 엑셀에는 목표한 수치(150, 175, 200)가 예쁘게 기록됨
+                baseLatency: currentBaseMs, 
+                timestamp 
+            };
+
+            const display = document.getElementById('verseDisplay');
+            display.innerText = data.text;
+            display.classList.add('active');
+
+            document.getElementById('nextVerseBtn').style.display = 'none';
+            
+            setTimeout(() => {
+                mediaRecorder.stop();
+                stream.getTracks().forEach(track => track.stop());
+                display.classList.remove('active');
+            }, 10000); 
+
+        } catch (error) {
+            // 복사 과정에서 문제가 생겨도 화면이 멈추지 않고 어디가 문제인지 알려줍니다.
+            console.error("playNextVerse 실행 중 치명적 에러 발생:", error);
+            alert("실행 중 오류가 발생했습니다. 키보드의 F12 키를 눌러 [Console] 탭의 빨간색 에러 메시지를 확인해 주세요!");
         }
-
-        const data = verseData[currentVerseIndex];
-        const isControl = (currentSessionIndex === 0);
-
-        // --- [지연 시간 보정 로직 시작] ---
-        // 1. 현재 기기의 기초 지연시간(ms) 계산
-        const currentBaseMs = Math.round((audioContext.baseLatency || 0) * 1000);
-        
-        // 2. 엑셀에 기록될 '목표 지연시간' (Control이면 0, Test면 데이터상의 값 150/175/200)
-        const targetLat = isControl ? 0 : data.latency;
-
-        // 3. 실제 Worklet(이어폰)으로 보낼 값: 목표값에서 기초 지연을 뺌 (0 미만이 되지 않게 처리)
-        const finalLatencyForAudio = isControl ? 0 : Math.max(0, targetLat - currentBaseMs);
-        
-        // 보정된 값을 오디오 프로세서로 전송
-        workletNode.port.postMessage(finalLatencyForAudio);
-        // --- [지연 시간 보정 로직 끝] ---
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false
-        }});
-        mediaStream = stream;
-        const source = audioContext.createMediaStreamSource(stream);
-
-        if (isControl) {
-            source.connect(audioContext.destination);
-        } else {
-            source.connect(workletNode).connect(audioContext.destination);
-        }
-
-        playWhiteNoise(audioContext);
-
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => { addAudioToZip(); showRatingScreen(); };
-
-        const timestamp = new Date().toISOString();
-        mediaRecorder.start();
-
-        // --- [데이터 기록 부분] ---
-        window.tempLogData = { 
-            subjectId, 
-            name: document.getElementById('userName').value, 
-            session: currentSessionIndex + 1, 
-            mode: isControl ? 'Control' : 'Test', 
-            verse: data.text, 
-            appliedLat: targetLat, // ★ 여기에 보정 전 '목표 수치(150, 175, 200)'를 그대로 저장합니다.
-            baseLatency: currentBaseMs, // 기초 지연 시간도 참고용으로 기록 (ms 단위)
-            timestamp 
-        };
-
-        const display = document.getElementById('verseDisplay');
-        display.innerText = data.text;
-        display.classList.add('active');
-
-        document.getElementById('nextVerseBtn').style.display = 'none';
-        
-        setTimeout(() => {
-            mediaRecorder.stop();
-            stream.getTracks().forEach(track => track.stop());
-            display.classList.remove('active');
-        }, 10000); // 10초간 녹음 및 지연 피드백 유지
     }
-
     function showRatingScreen() {
         currentPhase = `Session${currentSessionIndex+1}_Rating${currentVerseIndex+1}`; // 별점 평가 시간 라벨링
 
