@@ -366,9 +366,7 @@
         
         window.tempLogData = { 
             subjectId, name: document.getElementById('userName').value, session: currentSessionIndex + 1, mode: isControl ? 'Control' : 'Test', 
-            verse: data.text, appliedLat: isControl ? 0 : data.latency, 
-            baseLatency: Math.round((audioContext.baseLatency || 0) * 1000), // 초를 ms로 변환하고 소수점 반올림
-            timestamp 
+            verse: data.text, appliedLat: isControl ? 0 : data.latency, baseLatency: audioContext.baseLatency || 0, timestamp 
         };
 
         const totalDurationMs = (data.text.length * 200) + 2000;
@@ -479,7 +477,7 @@
         const btn = document.getElementById('downloadBtn'); btn.innerText = "압축 및 다운로드 중..."; btn.disabled = true; btn.style.background = "#ccc";
         const userName = document.getElementById('userName').value;
         
-        let logCsv = "식별코드,이름,세션,모드,문장,지연시간(ms),기초지연시간(ms),멀미점수,타임스탬프\n"; 
+        let logCsv = "식별코드,이름,세션,모드,문장,지연시간(ms),기초지연시간(s),멀미점수,타임스탬프\n"; 
         logs.forEach(r => logCsv += `${r.subjectId},"${r.name}",${r.session},${r.mode},"${r.verse}",${r.appliedLat},${r.baseLatency},${r.score},${r.timestamp}\n`); 
         zip.file(`1_DAF_Logs_ID${subjectId}_${userName}.csv`, "\ufeff" + logCsv);
         
