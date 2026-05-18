@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>감각 불일치와 멀미 연관성 연구 (Sensory Mismatch & Sickness Study)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Pretendard', -apple-system, sans-serif; background: #f4f7f9; padding: 20px; color: #333; }
         .card { background: white; max-width: 850px; margin: 0 auto; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
@@ -45,8 +46,10 @@
                 <p style="margin:0 0 10px 0; font-weight:bold;">🔌 아두이노 센서(GSR/HRV) 연결</p>
                 <button onclick="connectArduino()" class="btn btn-secondary" style="width:auto; padding:10px 20px; margin-top:0;">포트 연결하기</button>
                 <div id="arduinoStatus" class="sensor-status">현재 연결 안 됨 (필요시 먼저 연결하세요)</div>
-                <div id="sensorLiveView" style="margin-top: 15px; padding: 10px; background: #fff; border: 1px dashed #1a73e8; border-radius: 8px; font-family: monospace; font-size: 1.1rem; color: #333; display: none;">⏳ 센서 값 대기 중...</div>
-            </div>
+                <div id="sensorLiveView" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px dashed #1a73e8; border-radius: 8px; display: none;">
+                    <p style="text-align:center; font-weight:bold; margin-top:0; color:#333;">📡 실시간 센서 그래프 (연결 확인용)</p>
+                    <canvas id="liveChart" height="60"></canvas>
+                </div>
 
             <h3>참여자 정보 입력</h3>
             <div class="input-group">
@@ -214,11 +217,46 @@
                             // [아두이노시간, GSR, HRV, 웹타임스탬프, 현재실험단계] 형태로 배열에 저장
                             biosignals.push(`${parts[0]},${parts[1]},${parts[2]},${webTimestamp},${currentPhase}`);
     
-                            // 👇 새로 추가된 로직: 현재 단계가 'Setup'일 때만 화면에 센서 값 갱신 👇
+                            // 👇 새로 추가된 로직: Setup 단계에서만 실시간 그래프 그리기 👇
                             if (currentPhase === "Setup") {
                                 const liveView = document.getElementById('sensorLiveView');
-                                if (liveView.style.display === 'none') liveView.style.display = 'block';
-                                liveView.innerHTML = `<strong>📡 실시간 데이터</strong> ｜ GSR: <span style="color:#d93025; font-weight:bold;">${parts[1]}</span> ｜ HRV: <span style="color:#1a73e8; font-weight:bold;">${parts[2]}</span>`;
+        
+                                // 화면에 뷰가 켜지지 않았다면 켜고, 차트 생성하기 (최초 1회 실행)
+                                if (liveView.style.display === 'none') {
+                                    liveView.style.display = 'block';
+                                    const ctx = document.getElementById('liveChart').getContext('2d');
+                                    window.liveSensorChart = new Chart(ctx, {
+                                        type: 'line',
+                                        data: {
+                                            labels: [],
+                                            datasets: [
+                                                { label: 'GSR', borderColor: '#d93025', data: [], borderWidth: 2, pointRadius: 0, tension: 0.1 },
+                                                { label: 'HRV', borderColor: '#1a73e8', data: [], borderWidth: 2, pointRadius: 0, tension: 0.1 }
+                                            ]
+                                        },
+                                        options: { 
+                                            responsive: true, 
+                                            animation: false, // 렉 방지를 위해 애니메이션 끔
+                                            scales: { x: { display: false } } // X축 시간 글자 숨김
+                                            }
+                                    });
+                                }
+                                
+                                // 차트에 새로운 센서 값(점) 밀어 넣기
+                                if (window.liveSensorChart) {
+                                    const chart = window.liveSensorChart;
+                                    chart.data.labels.push('');
+                                    chart.data.datasets[0].data.push(Number(parts[1]));
+                                    chart.data.datasets[1].data.push(Number(parts[2]));
+            
+                                    // 데이터가 50개(점)가 넘어가면 과거 데이터 지우기 (우측으로 흘러가는 효과)
+                                    if (chart.data.labels.length > 50) {
+                                        chart.data.labels.shift();
+                                        chart.data.datasets[0].data.shift();
+                                        chart.data.datasets[1].data.shift();
+                                    }
+                                    chart.update(); // 그래프 새로고침
+                                }
                             }
                         }
                     }
