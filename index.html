@@ -47,8 +47,17 @@
                 <button onclick="connectArduino()" class="btn btn-secondary" style="width:auto; padding:10px 20px; margin-top:0;">포트 연결하기</button>
                 <div id="arduinoStatus" class="sensor-status">현재 연결 안 됨 (필요시 먼저 연결하세요)</div>
                 <div id="sensorLiveView" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px dashed #1a73e8; border-radius: 8px; display: none;">
-                    <p style="text-align:center; font-weight:bold; margin-top:0; color:#333;">📡 실시간 센서 그래프 (연결 확인용)</p>
-                    <canvas id="liveChart" height="60"></canvas>
+                    <p style="text-align:center; font-weight:bold; margin-top:0; margin-bottom:15px; color:#333;">📡 실시간 센서 그래프 (연결 확인용)</p>
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <p style="text-align:center; font-size:0.95rem; margin:0 0 5px 0; color:#d93025; font-weight:bold;">GSR (피부 전도도)</p>
+                            <canvas id="liveGsrChart" height="100"></canvas>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <p style="text-align:center; font-size:0.95rem; margin:0 0 5px 0; color:#1a73e8; font-weight:bold;">HRV (심박 변이도)</p>
+                            <canvas id="liveHrvChart" height="100"></canvas>
+                        </div>
+                    </div>
                 </div>
 
             <h3>참여자 정보 입력</h3>
@@ -217,45 +226,52 @@
                             // [아두이노시간, GSR, HRV, 웹타임스탬프, 현재실험단계] 형태로 배열에 저장
                             biosignals.push(`${parts[0]},${parts[1]},${parts[2]},${webTimestamp},${currentPhase}`);
     
-                            // 👇 새로 추가된 로직: Setup 단계에서만 실시간 그래프 그리기 👇
+                            // 👇 새로 변경된 로직: Setup 단계에서만 두 개의 독립된 그래프 그리기 👇
                             if (currentPhase === "Setup") {
                                 const liveView = document.getElementById('sensorLiveView');
         
-                                // 화면에 뷰가 켜지지 않았다면 켜고, 차트 생성하기 (최초 1회 실행)
+                                // 화면에 뷰가 켜지지 않았다면 켜고, 차트 2개 각각 독립 생성 (최초 1회 실행)
                                 if (liveView.style.display === 'none') {
                                     liveView.style.display = 'block';
-                                    const ctx = document.getElementById('liveChart').getContext('2d');
-                                    window.liveSensorChart = new Chart(ctx, {
+            
+                                    // 1. GSR 차트 초기화
+                                    const ctxGsr = document.getElementById('liveGsrChart').getContext('2d');
+                                    window.liveGsrChart = new Chart(ctxGsr, {
                                         type: 'line',
-                                        data: {
-                                            labels: [],
-                                            datasets: [
-                                                { label: 'GSR', borderColor: '#d93025', data: [], borderWidth: 2, pointRadius: 0, tension: 0.1 },
-                                                { label: 'HRV', borderColor: '#1a73e8', data: [], borderWidth: 2, pointRadius: 0, tension: 0.1 }
-                                            ]
-                                        },
-                                        options: { 
-                                            responsive: true, 
-                                            animation: false, // 렉 방지를 위해 애니메이션 끔
-                                            scales: { x: { display: false } } // X축 시간 글자 숨김
-                                            }
+                                        data: { labels: [], datasets: [{ data: [], borderColor: '#d93025', borderWidth: 2, pointRadius: 0, tension: 0.1 }] },
+                                        options: { responsive: true, animation: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+                                    });
+            
+                                    // 2. HRV 차트 초기화
+                                    const ctxHrv = document.getElementById('liveHrvChart').getContext('2d');
+                                    window.liveHrvChart = new Chart(ctxHrv, {
+                                        type: 'line',
+                                        data: { labels: [], datasets: [{ data: [], borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, tension: 0.1 }] },
+                                        options: { responsive: true, animation: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
                                     });
                                 }
-                                
-                                // 차트에 새로운 센서 값(점) 밀어 넣기
-                                if (window.liveSensorChart) {
-                                    const chart = window.liveSensorChart;
-                                    chart.data.labels.push('');
-                                    chart.data.datasets[0].data.push(Number(parts[1]));
-                                    chart.data.datasets[1].data.push(Number(parts[2]));
-            
-                                    // 데이터가 50개(점)가 넘어가면 과거 데이터 지우기 (우측으로 흘러가는 효과)
-                                    if (chart.data.labels.length > 50) {
-                                        chart.data.labels.shift();
-                                        chart.data.datasets[0].data.shift();
-                                        chart.data.datasets[1].data.shift();
+
+                                // 각 차트에 센서 값 독립적으로 밀어 넣기 (최근 50개 유지)
+                                if (window.liveGsrChart) {
+                                    const chartG = window.liveGsrChart;
+                                    chartG.data.labels.push('');
+                                    chartG.data.datasets[0].data.push(Number(parts[1]));
+                                    if (chartG.data.labels.length > 50) {
+                                        chartG.data.labels.shift();
+                                        chartG.data.datasets[0].data.shift();
                                     }
-                                    chart.update(); // 그래프 새로고침
+                                    chartG.update();
+                                }
+
+                                if (window.liveHrvChart) {
+                                    const chartH = window.liveHrvChart;
+                                    chartH.data.labels.push('');
+                                    chartH.data.datasets[0].data.push(Number(parts[2]));
+                                    if (chartH.data.labels.length > 50) {
+                                        chartH.data.labels.shift();
+                                        chartH.data.datasets[0].data.shift();
+                                    }
+                                    chartH.update();
                                 }
                             }
                         }
