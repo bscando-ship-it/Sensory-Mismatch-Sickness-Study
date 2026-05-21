@@ -123,13 +123,11 @@
             <h3>Part 3. 감각 불일치 및 통제력 경험</h3>
             <div id="sensory_container"></div>
 
-            <button onclick="submitPostSurvey()" class="btn btn-secondary" style="margin-top:30px;">세션 설문 제출</button>
         </div>
 
         <div id="stepBreak" class="hidden">
-            <h2>1세션 종료! 10분간 휴식입니다.</h2>
+            <h2> 10분간 휴식입니다. </h2>
             <div class="timer-text" id="breakTimerDisplay">10:00</div>
-            <button id="startSession2Btn" class="btn" onclick="startBlock()" disabled>두 번째 세션 시작</button>
         </div>
 
         <div id="stepDone" class="hidden text-center">
@@ -447,45 +445,73 @@
         currentPhase = `Session${currentSessionIndex+1}_PostSurvey`; // 종료 설문 시간 라벨링
 
         document.getElementById('stepReading').classList.add('hidden');
-        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료 후] 종합 설문지`;
+        document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료 후] 종합 설문지 (제한시간: 3분)`;
         document.querySelectorAll('#stepPostSurvey input[type=radio]').forEach(e => e.checked = false);
         document.querySelectorAll('#stepPostSurvey input[type=number]').forEach(e => e.value = '');
         document.getElementById('stepPostSurvey').classList.remove('hidden');
+
+        // [추가] 3분(180초 = 180000ms) 후에 자동으로 submitPostSurvey 함수를 실행합니다.
+        clearTimeout(window.postSurveyTimeout);
+        window.postSurveyTimeout = setTimeout(() => {
+            submitPostSurvey();
+        }, 180000);
     }
 
     function submitPostSurvey() {
+        // 자동 넘어가기 타이머가 중복 작동하지 않도록 클리어
+        clearTimeout(window.postSurveyTimeout);
+
         let sessionData = { session: currentSessionIndex + 1, mode: experimentFlow[currentSessionIndex] };
-        for(let i=0; i<ssqList.length; i++) { let el = document.querySelector(`input[name="ssq_${i}"]:checked`); if(!el) return alert("SSQ 항목을 체크해주세요."); sessionData[`ssq_${i+1}`] = el.value; }
-        for(let i=0; i<tlxList.length; i++) { let el = document.getElementById(`tlx_${i}`); if(!el.value) return alert("NASA-TLX를 입력해주세요."); sessionData[`tlx_${i+1}`] = el.value; }
-        for(let i=0; i<sensList.length; i++) { let el = document.getElementById(`sens_${i}`); if(!el.value) return alert("감각 항목을 입력해주세요."); sessionData[`sens_${i+1}`] = el.value; }
+        
+        // [수정] 버튼이 없으므로 경고창(alert)을 없애고, 체크하지 못한 항목은 "미응답"으로 자동 저장합니다.
+        for(let i=0; i<ssqList.length; i++) { 
+            let el = document.querySelector(`input[name="ssq_${i}"]:checked`); 
+            sessionData[`ssq_${i+1}`] = el ? el.value : "미응답"; 
+        }
+        for(let i=0; i<tlxList.length; i++) { 
+            let el = document.getElementById(`tlx_${i}`); 
+            sessionData[`tlx_${i+1}`] = el.value ? el.value : "미응답"; 
+        }
+        for(let i=0; i<sensList.length; i++) { 
+            let el = document.getElementById(`sens_${i}`); 
+            sessionData[`sens_${i+1}`] = el.value ? el.value : "미응답"; 
+        }
+        
         postSurveyData.push(sessionData);
         document.getElementById('stepPostSurvey').classList.add('hidden');
-    
-    // [수정 내용] 세션 구분 없이 무조건 인덱스를 증가시키고 쉬는 시간으로 진입합니다.
+        
         currentSessionIndex++; 
         startBreakTime();
     }
 
     function startBreakTime() {
         currentPhase = "BreakTime"; // 휴식 시간 라벨링
-    
-    // [추가 내용] 현재 세션 상태에 따라 화면 텍스트와 버튼 문구를 동적으로 변경합니다.
+        
         const breakHeader = document.querySelector('#stepBreak h2');
-        const btn = document.getElementById('startSession2Btn');
-    
         if (currentSessionIndex === 1) {
             breakHeader.innerText = "1세션 종료! 10분간 휴식입니다.";
-            btn.innerText = "두 번째 세션 시작";
         } else if (currentSessionIndex === 2) {
             breakHeader.innerText = "2세션 종료! 10분간 휴식입니다.";
-            btn.innerText = "실험 완료 단계로 이동";
         }
-    
+        
         document.getElementById('stepBreak').classList.remove('hidden');
-        let timeLeft = 600; const display = document.getElementById('breakTimerDisplay'); btn.disabled = true;
-        const breakInterval = setInterval(() => {
-            timeLeft--; let m = Math.floor(timeLeft / 60); let s = timeLeft % 60; display.innerText = `${m}:${s < 10 ? '0'+s : s}`;
-            if(timeLeft <= 0) { clearInterval(breakInterval); display.innerText = "휴식 종료!"; btn.disabled = false; btn.style.background = "#1a73e8"; }
+        let timeLeft = 600; 
+        const display = document.getElementById('breakTimerDisplay'); 
+        
+        clearInterval(breakInterval);
+        var breakInterval = setInterval(() => {
+            timeLeft--; 
+            let m = Math.floor(timeLeft / 60); 
+            let s = timeLeft % 60; 
+            display.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            
+            if(timeLeft <= 0) { 
+                clearInterval(breakInterval); 
+                display.innerText = "휴식 종료!"; 
+                
+                // [수정] 버튼 활성화 대신 시간이 완료되면 자동으로 startBlock()을 실행해 다음 단계로 넘깁니다.
+                startBlock(); 
+            }
         }, 1000);
     }
 
