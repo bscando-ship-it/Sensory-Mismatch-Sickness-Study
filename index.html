@@ -66,8 +66,6 @@
         </div>
 
         <div id="stepPreSurvey" class="hidden">
-            <div id="preSurveyTimerDisplay" style="font-size:1.5rem; color:#d93025; font-weight:bold; text-align:center; margin-bottom: 15px; background: #fce8e6; padding: 10px; border-radius: 8px;">남은 시간: 04:00</div>
-            
             <h2>📋 [실험 전] 사전 설문지 (Pre-Experiment Questionnaire)</h2>
             <p class="survey-note"><strong>목적:</strong> 참가자의 당일 신체 컨디션 점검 및 기저 멀미 민감도(Modified MSSQ) 파악</p>
             
@@ -84,7 +82,7 @@
             <h3>2. 멀미 민감도 평가 (Modified MSSQ-Short)</h3>
             <p class="survey-note">12세 이후부터 현재까지, 다음 상황에서 멀미(메스꺼움, 어지럼증)를 얼마나 자주 느끼는지 체크해 주세요.<br><strong>(척도: 0=전혀 없음 / 1=드물게 있음 / 2=가끔 있음 / 3=자주 있음 / 4=항상 있음)</strong></p>
             <div id="mssq_container"></div>
-            <button onclick="submitPreSurvey(false)" class="btn">설문 제출 및 안내사항 보기</button>
+            <button onclick="submitPreSurvey()" class="btn">설문 제출 및 안내사항 보기</button>
         </div>
 
         <div id="stepPre" class="hidden text-center">
@@ -95,16 +93,7 @@
             </div>
             <p style="color:#333; font-weight:bold; font-size:1.2rem; background-color:#fff3cd; padding:10px; border-radius:8px;">※ 귀에서 백색소음(치지직 거리는 소리)이 들리면 문장을 읽기 시작해주세요.</p>
             <p style="color:#333; font-weight:bold; font-size:1.1rem;">※ 문장이 나타나면 즉시 녹음이 시작됩니다.</p>
-            <button class="btn btn-secondary" onclick="startBaseline()">실험 전 안정상태(Baseline) 측정 시작</button>
-        </div>
-
-        <div id="stepBaseline" class="hidden text-center">
-            <h2>🧘 안정 상태(Baseline) 측정 중</h2>
-            <div class="alert-box" style="background-color: #e8f0fe; border-color: #1a73e8;">
-                <p style="font-size:1.6rem; font-weight:bold; color:#1a73e8; margin: 0;">지금부터 눈을 감고 가만히 계세요.</p>
-                <p style="font-size:1.2rem; color:#333; margin-top: 10px;">30초가 지나고 '삐빅' 소리가 나면 실험이 시작됩니다.</p>
-            </div>
-            <div class="timer-text" id="baselineTimerDisplay" style="font-size: 6rem;">30</div>
+            <button class="btn btn-secondary" onclick="startBlock()">첫 번째 세션 시작</button>
         </div>
 
         <div id="stepReading" class="hidden">
@@ -290,111 +279,27 @@
         subjectId = document.getElementById('subjectId').value;
         if(!subjectId || !document.getElementById('userName').value) return alert("식별 코드와 이름을 모두 입력해주세요.");
         
-        currentPhase = "PreSurvey"; 
+        currentPhase = "PreSurvey"; // 생체 데이터 상태 라벨 변경
         
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('stepPreSurvey').classList.remove('hidden');
-
-        // 👇 4분(240초) 타이머 시작 로직 👇
-        let preTimeLeft = 240;
-        const preTimerDisplay = document.getElementById('preSurveyTimerDisplay');
-        window.preSurveyInterval = setInterval(() => {
-            preTimeLeft--;
-            let m = Math.floor(preTimeLeft / 60);
-            let s = preTimeLeft % 60;
-            preTimerDisplay.innerText = `남은 시간: ${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-            
-            if(preTimeLeft <= 0) {
-                clearInterval(window.preSurveyInterval);
-                alert("시간이 초과되어 자동으로 다음 단계로 넘어갑니다.");
-                submitPreSurvey(true); // true = 강제 자동 제출
-            }
-        }, 1000);
     }
 
-    // isAuto가 true면 빈칸 검사를 무시하고 제출합니다.
-   // isAuto가 true면 빈칸 검사를 무시하고 제출합니다.
-    function submitPreSurvey(isAuto = false) {
-        if (!isAuto) {
-            if(!document.getElementById('pre_sleep').value || !document.getElementById('pre_fatigue').value) return alert("필수 항목을 입력해주세요.");
-            for(let i=0; i<mssqList.length; i++) {
-                if(!document.querySelector(`input[name="mssq_${i}"]:checked`)) return alert("MSSQ 항목을 모두 체크해주세요.");
-            }
-        }
-        clearInterval(window.preSurveyInterval); // 사용자가 직접 냈으면 타이머 정지
-
-        // 👇 수정된 부분: 값이 없으면 "0" 대신 "미응답"으로 명확하게 처리하여 강제 저장
-        preSurveyData = { 
-            sleep: document.getElementById('pre_sleep').value || "미응답", 
-            fatigue: document.getElementById('pre_fatigue').value || "미응답", 
-            drug: document.querySelector('input[name="pre_drug"]:checked') ? document.querySelector('input[name="pre_drug"]:checked').value : "미응답", 
-            caffeine: document.querySelector('input[name="pre_caf"]:checked') ? document.querySelector('input[name="pre_caf"]:checked').value : "미응답" 
-        };
+    function submitPreSurvey() {
+        if(!document.getElementById('pre_sleep').value || !document.getElementById('pre_fatigue').value) return alert("필수 항목을 입력해주세요.");
+        preSurveyData = { sleep: document.getElementById('pre_sleep').value, fatigue: document.getElementById('pre_fatigue').value, drug: document.querySelector('input[name="pre_drug"]:checked').value, caffeine: document.querySelector('input[name="pre_caf"]:checked').value };
         for(let i=0; i<mssqList.length; i++) {
             let el = document.querySelector(`input[name="mssq_${i}"]:checked`);
-            preSurveyData[`mssq_${i+1}`] = el ? el.value : "미응답";
+            if(!el) return alert("MSSQ 항목을 모두 체크해주세요.");
+            preSurveyData[`mssq_${i+1}`] = el.value;
         }
-        
         subjectId = parseInt(subjectId);
         experimentFlow = (subjectId % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
         
-        currentPhase = "ReadyWait"; 
+        currentPhase = "ReadyWait"; // 생체 데이터 상태 라벨 변경
 
         document.getElementById('stepPreSurvey').classList.add('hidden');
         document.getElementById('stepPre').classList.remove('hidden');
-    }
-    
-    // 👇 새로 추가된 30초 베이스라인 측정 로직 👇
-    function startBaseline() {
-        document.getElementById('stepPre').classList.add('hidden');
-        document.getElementById('stepBaseline').classList.remove('hidden');
-        
-        currentPhase = "Baseline"; // 매트랩에서 이 라벨 구간을 베이스라인으로 쓰시면 됩니다!
-        
-        let baseTimeLeft = 30;
-        const display = document.getElementById('baselineTimerDisplay');
-        display.innerText = baseTimeLeft;
-        
-        const baseInterval = setInterval(() => {
-            baseTimeLeft--;
-            display.innerText = baseTimeLeft;
-            
-            if(baseTimeLeft <= 0) {
-                clearInterval(baseInterval);
-                playBeepSound(); // 삐빅 소리 재생
-                
-                // 베이스라인 화면 숨기고 바로 1세션 시작
-                document.getElementById('stepBaseline').classList.add('hidden');
-                startBlock();
-            }
-        }, 1000);
-    }
-
-    // 알림용 삐빅 소리 생성기 (mp3 파일 없이 브라우저 자체 음향 사용)
-    function playBeepSound() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            osc.type = 'sine';
-            osc.frequency.value = 1000; // 다소 높은 경고음 톤
-            
-            // 첫 번째 삑
-            osc.start(ctx.currentTime);
-            gain.gain.setValueAtTime(1, ctx.currentTime);
-            gain.gain.setValueAtTime(0, ctx.currentTime + 0.15);
-            
-            // 두 번째 삑
-            gain.gain.setValueAtTime(1, ctx.currentTime + 0.25);
-            gain.gain.setValueAtTime(0, ctx.currentTime + 0.4);
-            
-            osc.stop(ctx.currentTime + 0.5);
-        } catch(e) { 
-            console.log("오디오 재생 오류", e); 
-        }
     }
 
     function startBlock() {
