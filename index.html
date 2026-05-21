@@ -34,6 +34,19 @@
         /* 생체 데이터 연결 알림용 스타일 */
         .sensor-box { background: #e8f0fe; border: 2px solid #1a73e8; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
         .sensor-status { font-weight: bold; color: #d93025; font-size: 1.1rem; margin-top: 10px; }
+        /* 사후 설문지 전용 프로그레스 바 스타일 */
+        #postSurveyBarContainer { width: 100%; height: 15px; background: #ddd; border-radius: 8px; overflow: hidden; margin: 20px 0; }
+        #postSurveyBar { width: 100%; height: 100%; background: #d93025; width: 100%; }
+
+        /* 💡 hidden 클래스가 사라지는 순간 3분(180초) 동안 막대기가 줄어듭니다 */
+        #stepPostSurvey:not(.hidden) #postSurveyBar {
+            animation: surveyCountdown 180s linear forwards;
+        }
+
+        @keyframes surveyCountdown {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
     </style>
 </head>
 <body>
@@ -119,6 +132,7 @@
 
         <div id="stepPostSurvey" class="hidden">
             <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지 (Post-Session Questionnaire)</h2>
+            <div id="postSurveyBarContainer"><div id="postSurveyBar"></div></div>
             <p class="survey-note"><strong>목적:</strong> 대조군/실험군 각 세션(21문장 낭독) 종료 직후 실시. 신체적 증상(Modified SSQ), 인지 부하(NASA-TLX), 감각 통제력 파악.</p>
 
             <h3>Part 1. 신체 및 자율신경계 반응 평가 (Modified SSQ)</h3>
@@ -596,10 +610,10 @@ function playBeep() {
     osc.frequency.setValueAtTime(800, ctx.currentTime); // 주파수 설정
     
     // 첫 번째 '삐'
-    gainNode.gain.setValueAtTime(1, ctx.currentTime);
+    gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
     gainNode.gain.setValueAtTime(0, ctx.currentTime + 0.1);
     // 두 번째 '빅'
-    gainNode.gain.setValueAtTime(1, ctx.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(0.5, ctx.currentTime + 0.2);
     gainNode.gain.setValueAtTime(0, ctx.currentTime + 0.3);
     
     osc.start(ctx.currentTime);
