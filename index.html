@@ -295,11 +295,19 @@
     }
 
     function startBlock() {
+    // [추가 내용] 2세션 종료 후 휴식이 끝난 상태라면 최종 완료 화면으로 이동합니다.
+        if (currentSessionIndex >= 2) {
+            document.getElementById('stepBreak').classList.add('hidden');
+            currentPhase = "Done";
+            document.getElementById('stepDone').classList.remove('hidden');
+            return;
+        }
+
         currentVerseIndex = 0;
         document.getElementById('stepPre').classList.add('hidden');
         document.getElementById('stepBreak').classList.add('hidden');
         document.getElementById('stepReading').classList.remove('hidden');
-        
+    
         document.getElementById('currentPhaseTitle').innerText = `[${currentSessionIndex + 1}세션] 진행 중 (식별 코드: ${subjectId})`;
         playNextVerse();
     }
@@ -452,19 +460,29 @@
         for(let i=0; i<sensList.length; i++) { let el = document.getElementById(`sens_${i}`); if(!el.value) return alert("감각 항목을 입력해주세요."); sessionData[`sens_${i+1}`] = el.value; }
         postSurveyData.push(sessionData);
         document.getElementById('stepPostSurvey').classList.add('hidden');
-        if(currentSessionIndex === 0) { 
-            currentSessionIndex++; 
-            startBreakTime(); 
-        } else { 
-            currentPhase = "Done";
-            document.getElementById('stepDone').classList.remove('hidden'); 
-        }
+    
+    // [수정 내용] 세션 구분 없이 무조건 인덱스를 증가시키고 쉬는 시간으로 진입합니다.
+        currentSessionIndex++; 
+        startBreakTime();
     }
 
     function startBreakTime() {
         currentPhase = "BreakTime"; // 휴식 시간 라벨링
+    
+    // [추가 내용] 현재 세션 상태에 따라 화면 텍스트와 버튼 문구를 동적으로 변경합니다.
+        const breakHeader = document.querySelector('#stepBreak h2');
+        const btn = document.getElementById('startSession2Btn');
+    
+        if (currentSessionIndex === 1) {
+            breakHeader.innerText = "1세션 종료! 10분간 휴식입니다.";
+            btn.innerText = "두 번째 세션 시작";
+        } else if (currentSessionIndex === 2) {
+            breakHeader.innerText = "2세션 종료! 10분간 휴식입니다.";
+            btn.innerText = "실험 완료 단계로 이동";
+        }
+    
         document.getElementById('stepBreak').classList.remove('hidden');
-        let timeLeft = 600; const display = document.getElementById('breakTimerDisplay'); const btn = document.getElementById('startSession2Btn'); btn.disabled = true;
+        let timeLeft = 600; const display = document.getElementById('breakTimerDisplay'); btn.disabled = true;
         const breakInterval = setInterval(() => {
             timeLeft--; let m = Math.floor(timeLeft / 60); let s = timeLeft % 60; display.innerText = `${m}:${s < 10 ? '0'+s : s}`;
             if(timeLeft <= 0) { clearInterval(breakInterval); display.innerText = "휴식 종료!"; btn.disabled = false; btn.style.background = "#1a73e8"; }
