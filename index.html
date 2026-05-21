@@ -101,7 +101,7 @@
             <h2>실험 준비 완료</h2>
             <div class="alert-box">
                 <p style="font-size:1.4rem; line-height:1.6; font-weight:bold; color:#1a73e8; margin-top: 0;">🎧 주의: 반드시 '유선 이어폰'이나 '유선 헤드셋'을 착용해 주세요!</p>
-                <p style="color:#d93025; font-weight:bold; font-size:1.2rem; margin-bottom: 0;">🚨 [안내] 마지막에 파일(ZIP)을 꼭 담당자에게 전송해 주세요.</p>
+                <p style="color:#d93025; font-weight:bold; font-size:1.2rem; margin-bottom: 0;">🚨 [안내] 마지막에 파일(ZIP)을 꼭 다운로드해 주세요.</p>
             </div>
             <p style="color:#333; font-weight:bold; font-size:1.2rem; background-color:#fff3cd; padding:10px; border-radius:8px;">※ 귀에서 백색소음(치지직 거리는 소리)이 들리면 문장을 읽기 시작해주세요.</p>
             <p style="color:#333; font-weight:bold; font-size:1.1rem;">※ 문장이 나타나면 즉시 녹음이 시작됩니다.</p>
@@ -502,7 +502,7 @@
         clearTimeout(window.postSurveyTimeout);
         window.postSurveyTimeout = setTimeout(() => {
             submitPostSurvey();
-        }, 10000);
+        }, 180000);
     }
 
     function submitPostSurvey() {
@@ -543,7 +543,7 @@
         }
         
         document.getElementById('stepBreak').classList.remove('hidden');
-        let timeLeft = 5; 
+        let timeLeft = 600; 
         const display = document.getElementById('breakTimerDisplay'); 
         
         clearInterval(breakInterval);
