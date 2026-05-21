@@ -304,6 +304,11 @@
             document.getElementById('stepBreak').classList.add('hidden');
             currentPhase = "Done";
             document.getElementById('stepDone').classList.remove('hidden');
+        
+            // [수정된 부분] 2세션 종료 후 자동으로 Zip 파일을 다운로드합니다.
+            if (typeof downloadAllData === 'function') {
+                downloadAllData(); 
+            }
             return;
         }
 
