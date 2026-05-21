@@ -454,7 +454,7 @@
         clearTimeout(window.postSurveyTimeout);
         window.postSurveyTimeout = setTimeout(() => {
             submitPostSurvey();
-        }, 180000);
+        }, 10000);
     }
 
     function submitPostSurvey() {
@@ -495,7 +495,7 @@
         }
         
         document.getElementById('stepBreak').classList.remove('hidden');
-        let timeLeft = 600; 
+        let timeLeft = 5; 
         const display = document.getElementById('breakTimerDisplay'); 
         
         clearInterval(breakInterval);
