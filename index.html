@@ -45,7 +45,6 @@
                 <p style="margin:0 0 10px 0; font-weight:bold;">🔌 아두이노 센서(GSR/HRV) 연결</p>
                 <button onclick="connectArduino()" class="btn btn-secondary" style="width:auto; padding:10px 20px; margin-top:0;">포트 연결하기</button>
                 <div id="arduinoStatus" class="sensor-status">현재 연결 안 됨 (필요시 먼저 연결하세요)</div>
-                <div id="sensorLiveView" style="margin-top: 15px; padding: 10px; background: #fff; border: 1px dashed #1a73e8; border-radius: 8px; font-family: monospace; font-size: 1.1rem; color: #333; display: none;">⏳ 센서 값 대기 중...</div>
             </div>
 
             <h3>참여자 정보 입력</h3>
@@ -213,13 +212,6 @@
                         if (parts.length === 3) { // 포맷이 아두이노(Time, GSR, HRV)와 일치하면
                             // [아두이노시간, GSR, HRV, 웹타임스탬프, 현재실험단계] 형태로 배열에 저장
                             biosignals.push(`${parts[0]},${parts[1]},${parts[2]},${webTimestamp},${currentPhase}`);
-    
-                            // 👇 새로 추가된 로직: 현재 단계가 'Setup'일 때만 화면에 센서 값 갱신 👇
-                            if (currentPhase === "Setup") {
-                                const liveView = document.getElementById('sensorLiveView');
-                                if (liveView.style.display === 'none') liveView.style.display = 'block';
-                                liveView.innerHTML = `<strong>📡 실시간 데이터</strong> ｜ GSR: <span style="color:#d93025; font-weight:bold;">${parts[1]}</span> ｜ HRV: <span style="color:#1a73e8; font-weight:bold;">${parts[2]}</span>`;
-                            }
                         }
                     }
                 }
