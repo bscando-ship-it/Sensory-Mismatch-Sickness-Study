@@ -66,9 +66,11 @@
         </div>
 
         <div id="stepPreSurvey" class="hidden">
+            <div id="preSurveyTimerDisplay" style="font-size:1.5rem; color:#d93025; font-weight:bold; text-align:center; margin-bottom: 15px; background: #fce8e6; padding: 10px; border-radius: 8px;">남은 시간: 04:00</div>
+            
             <h2>📋 [실험 전] 사전 설문지 (Pre-Experiment Questionnaire)</h2>
             <p class="survey-note"><strong>목적:</strong> 참가자의 당일 신체 컨디션 점검 및 기저 멀미 민감도(Modified MSSQ) 파악</p>
-    
+            
             <h3>1. 기본 컨디션 점검</h3>
             <div class="survey-q"><p>1-1. 어젯밤 수면 시간은 대략 몇 시간입니까?</p><input type="number" id="pre_sleep" step="0.5" placeholder="예: 7.5"></div>
             <div class="survey-q"><p>1-2. 현재 체감하는 피로도를 평가해 주세요.<br><span style="font-size:0.9rem; color:#666;">(0: 전혀 피로하지 않음 ~ 10: 매우 피로함)</span></p><input type="number" id="pre_fatigue" min="0" max="10" placeholder="0~10 숫자"></div>
@@ -78,12 +80,11 @@
             <div class="survey-q"><p>1-4. 실험 시작 전 2시간 이내에 카페인 음료(커피, 에너지 드링크 등)를 섭취하셨습니까?</p>
                 <div class="radio-group"><label><input type="radio" name="pre_caf" value="예"> 예</label><label><input type="radio" name="pre_caf" value="아니오" checked> 아니오</label></div>
             </div>
-    
+            
             <h3>2. 멀미 민감도 평가 (Modified MSSQ-Short)</h3>
             <p class="survey-note">12세 이후부터 현재까지, 다음 상황에서 멀미(메스꺼움, 어지럼증)를 얼마나 자주 느끼는지 체크해 주세요.<br><strong>(척도: 0=전혀 없음 / 1=드물게 있음 / 2=가끔 있음 / 3=자주 있음 / 4=항상 있음)</strong></p>
             <div id="mssq_container"></div>
-
-            <button onclick="submitPreSurvey()" class="btn">설문 제출 및 안내사항 보기</button>
+            <button onclick="submitPreSurvey(false)" class="btn">설문 제출 및 안내사항 보기</button>
         </div>
 
         <div id="stepPre" class="hidden text-center">
@@ -122,7 +123,7 @@
         </div>
 
         <div id="stepPostSurvey" class="hidden">
-            <div id="postSurveyTimerDisplay" style="font-size:1.5rem; color:#d93025; font-weight:bold; text-align:center; margin-bottom: 15px; background: #fce8e6; padding: 10px; border-radius: 8px;">남은 시간: 05:00</div>            <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지 (Post-Session Questionnaire)</h2>
+            <h2 id="postSurveyHeader">📋 [세션 종료 후] 종합 설문지 (Post-Session Questionnaire)</h2>
             <p class="survey-note"><strong>목적:</strong> 대조군/실험군 각 세션(21문장 낭독) 종료 직후 실시. 신체적 증상(Modified SSQ), 인지 부하(NASA-TLX), 감각 통제력 파악.</p>
 
             <h3>Part 1. 신체 및 자율신경계 반응 평가 (Modified SSQ)</h3>
@@ -134,6 +135,7 @@
             <h3>Part 3. 감각 불일치 및 통제력 경험</h3>
             <div id="sensory_container"></div>
 
+            <button onclick="submitPostSurvey()" class="btn btn-secondary" style="margin-top:30px;">세션 설문 제출</button>
         </div>
 
         <div id="stepBreak" class="hidden">
@@ -284,24 +286,18 @@
     createInputs("tlx_container", "tlx", tlxList);
     createInputs("sensory_container", "sens", sensList);
 
-    let preSurveySubmitted = false; // 최상단 혹은 함수 근처에 추가 (제출 여부 체크용)
-
     function goToPreSurvey() {
         subjectId = document.getElementById('subjectId').value;
         if(!subjectId || !document.getElementById('userName').value) return alert("식별 코드와 이름을 모두 입력해주세요.");
-    
+        
         currentPhase = "PreSurvey"; 
-        preSurveySubmitted = false; // 초기화
-    
+        
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('stepPreSurvey').classList.remove('hidden');
 
-        // 💡 4분 타이머(setInterval) 관련 로직을 완전히 제거하여 대기 현상을 없앴습니다.
-    }
-
-        let preTimeLeft = 240; // 4분 (240초) 고정
+        // 👇 4분(240초) 타이머 시작 로직 👇
+        let preTimeLeft = 240;
         const preTimerDisplay = document.getElementById('preSurveyTimerDisplay');
-        
         window.preSurveyInterval = setInterval(() => {
             preTimeLeft--;
             let m = Math.floor(preTimeLeft / 60);
@@ -310,29 +306,24 @@
             
             if(preTimeLeft <= 0) {
                 clearInterval(window.preSurveyInterval);
-                
-                // 4분이 지났을 때 아직 직접 제출을 안 했다면 자동 미응답 처리 후 저장
-                if (!preSurveySubmitted) {
-                    processPreSurveyStorage(true);
-                }
-                
-                // 💡 [화면 전환] 무조건 4분이 지나야만 실행되는 다음 단계 로직
-                subjectId = parseInt(subjectId);
-                experimentFlow = (subjectId % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
-                currentPhase = "ReadyWait"; 
-
-                document.getElementById('stepPreSurvey').classList.add('hidden');
-                document.getElementById('stepPre').classList.remove('hidden');
-                
-                // 다음 실험을 위해 버튼 상태 원상복구
-                const btn = document.querySelector('#stepPreSurvey button');
-                if(btn) { btn.disabled = false; btn.innerText = "설문 제출 및 안내사항 보기"; }
+                alert("시간이 초과되어 자동으로 다음 단계로 넘어갑니다.");
+                submitPreSurvey(true); // true = 강제 자동 제출
             }
         }, 1000);
     }
 
-    // 사전 설문 데이터 저장만 담당하는 함수 (기존 로직 보존)
-    function processPreSurveyStorage(isAuto) {
+    // isAuto가 true면 빈칸 검사를 무시하고 제출합니다.
+   // isAuto가 true면 빈칸 검사를 무시하고 제출합니다.
+    function submitPreSurvey(isAuto = false) {
+        if (!isAuto) {
+            if(!document.getElementById('pre_sleep').value || !document.getElementById('pre_fatigue').value) return alert("필수 항목을 입력해주세요.");
+            for(let i=0; i<mssqList.length; i++) {
+                if(!document.querySelector(`input[name="mssq_${i}"]:checked`)) return alert("MSSQ 항목을 모두 체크해주세요.");
+            }
+        }
+        clearInterval(window.preSurveyInterval); // 사용자가 직접 냈으면 타이머 정지
+
+        // 👇 수정된 부분: 값이 없으면 "0" 대신 "미응답"으로 명확하게 처리하여 강제 저장
         preSurveyData = { 
             sleep: document.getElementById('pre_sleep').value || "미응답", 
             fatigue: document.getElementById('pre_fatigue').value || "미응답", 
@@ -343,27 +334,14 @@
             let el = document.querySelector(`input[name="mssq_${i}"]:checked`);
             preSurveyData[`mssq_${i+1}`] = el ? el.value : "미응답";
         }
-    }
-
-    function submitPreSurvey() {
-        // 사용자가 직접 버튼을 누른 경우 필수 항목 검사
-        if(!document.getElementById('pre_sleep').value || !document.getElementById('pre_fatigue').value) return alert("필수 항목을 입력해주세요.");
-        for(let i=0; i<mssqList.length; i++) {
-            if(!document.querySelector(`input[name="mssq_${i}"]:checked`)) return alert("MSSQ 항목을 모두 체크해주세요.");
-        }
-
-        processPreSurveyStorage(false); // 정상 데이터 저장
-        preSurveySubmitted = true; // 제출 완료 표시
-
-        // 💡 [수정] 버튼 클릭 시 타이머 대기 없이 즉시 다음(실험 준비완료) 단계로 화면 전환
+        
         subjectId = parseInt(subjectId);
         experimentFlow = (subjectId % 2 !== 0) ? ['control', 'test'] : ['test', 'control'];
+        
         currentPhase = "ReadyWait"; 
 
         document.getElementById('stepPreSurvey').classList.add('hidden');
         document.getElementById('stepPre').classList.remove('hidden');
-    
-        alert("설문 내용이 저장되었습니다. 실험 안내사항을 확인해 주세요.");
     }
     
     // 👇 새로 추가된 30초 베이스라인 측정 로직 👇
@@ -560,92 +538,30 @@
         playNextVerse();
     }
 
-    let postSurveySubmitted = false; // 사후 설문 제출 여부 체크 변수
-
     function endBlock() {
         currentPhase = `Session${currentSessionIndex+1}_PostSurvey`; // 종료 설문 시간 라벨링
-        postSurveySubmitted = false; // 제출 여부 초기화
 
         document.getElementById('stepReading').classList.add('hidden');
         document.getElementById('postSurveyHeader').innerText = `📋 [${currentSessionIndex + 1}세션 종료 후] 종합 설문지`;
         document.querySelectorAll('#stepPostSurvey input[type=radio]').forEach(e => e.checked = false);
         document.querySelectorAll('#stepPostSurvey input[type=number]').forEach(e => e.value = '');
         document.getElementById('stepPostSurvey').classList.remove('hidden');
-
-        // 👇 5분(300초) 타이머 시작 로직 👇
-        let postTimeLeft = 300; 
-        const postTimerDisplay = document.getElementById('postSurveyTimerDisplay');
-        if(postTimerDisplay) postTimerDisplay.innerText = `남은 시간: 05:00`;
-        
-        window.postSurveyInterval = setInterval(() => {
-            postTimeLeft--;
-            let m = Math.floor(postTimeLeft / 60);
-            let s = postTimeLeft % 60;
-            if(postTimerDisplay) postTimerDisplay.innerText = `남은 시간: ${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-            
-            // ⏰ 5분이 완전히 다 지났을 때 실행되는 영역
-            if(postTimeLeft <= 0) {
-                clearInterval(window.postSurveyInterval);
-                
-                // 아직 사용자가 직접 제출을 안 했다면 자동 미응답 처리 후 저장
-                if (!postSurveySubmitted) {
-                    processPostSurveyStorage(true);
-                }
-                
-                // 💡 [화면 전환] 5분이 지나야만 다음 세션이나 종료 화면으로 이동!
-                document.getElementById('stepPostSurvey').classList.add('hidden');
-                
-                if(currentSessionIndex === 0) { 
-                    currentSessionIndex++; 
-                    startBreakTime(); 
-                } else { 
-                    currentPhase = "Done";
-                    document.getElementById('stepDone').classList.remove('hidden'); 
-                }
-
-                // 다음 실험(2세션)을 위해 버튼 상태 원상복구
-                const btn = document.querySelector('#stepPostSurvey button');
-                if(btn) { btn.disabled = false; btn.innerText = "사후 설문 제출"; }
-            }
-        }, 1000);
-    }
-
-    // 사후 설문 데이터 저장만 전담하는 함수 (시간 초과 시 빈칸은 "미응답" 처리)
-    function processPostSurveyStorage(isAuto) {
-        let sessionData = { session: currentSessionIndex + 1, mode: experimentFlow[currentSessionIndex] };
-        
-        for(let i=0; i<ssqList.length; i++) { 
-            let el = document.querySelector(`input[name="ssq_${i}"]:checked`); 
-            sessionData[`ssq_${i+1}`] = el ? el.value : "미응답"; 
-        }
-        for(let i=0; i<tlxList.length; i++) { 
-            let el = document.getElementById(`tlx_${i}`); 
-            sessionData[`tlx_${i+1}`] = el && el.value ? el.value : "미응답"; 
-        }
-        for(let i=0; i<sensList.length; i++) { 
-            let el = document.getElementById(`sens_${i}`); 
-            sessionData[`sens_${i+1}`] = el && el.value ? el.value : "미응답"; 
-        }
-        postSurveyData.push(sessionData);
     }
 
     function submitPostSurvey() {
-        // 사용자가 직접 버튼을 누른 경우 필수 항목 검사
-        for(let i=0; i<ssqList.length; i++) { if(!document.querySelector(`input[name="ssq_${i}"]:checked`)) return alert("SSQ 항목을 체크해주세요."); }
-        for(let i=0; i<tlxList.length; i++) { if(!document.getElementById(`tlx_${i}`).value) return alert("NASA-TLX를 입력해주세요."); }
-        for(let i=0; i<sensList.length; i++) { if(!document.getElementById(`sens_${i}`).value) return alert("감각 항목을 입력해주세요."); }
-        
-        // 정상적으로 데이터 저장 및 제출 완료 마킹
-        processPostSurveyStorage(false);
-        postSurveySubmitted = true; 
-
-        // 💡 화면을 바로 넘기지 않고 버튼만 잠가서 대기 유도
-        const btn = document.querySelector('#stepPostSurvey button');
-        if(btn) {
-            btn.disabled = true;
-            btn.innerText = "제출 완료 (5분이 지나면 자동으로 이동합니다)";
+        let sessionData = { session: currentSessionIndex + 1, mode: experimentFlow[currentSessionIndex] };
+        for(let i=0; i<ssqList.length; i++) { let el = document.querySelector(`input[name="ssq_${i}"]:checked`); if(!el) return alert("SSQ 항목을 체크해주세요."); sessionData[`ssq_${i+1}`] = el.value; }
+        for(let i=0; i<tlxList.length; i++) { let el = document.getElementById(`tlx_${i}`); if(!el.value) return alert("NASA-TLX를 입력해주세요."); sessionData[`tlx_${i+1}`] = el.value; }
+        for(let i=0; i<sensList.length; i++) { let el = document.getElementById(`sens_${i}`); if(!el.value) return alert("감각 항목을 입력해주세요."); sessionData[`sens_${i+1}`] = el.value; }
+        postSurveyData.push(sessionData);
+        document.getElementById('stepPostSurvey').classList.add('hidden');
+        if(currentSessionIndex === 0) { 
+            currentSessionIndex++; 
+            startBreakTime(); 
+        } else { 
+            currentPhase = "Done";
+            document.getElementById('stepDone').classList.remove('hidden'); 
         }
-        alert("사후 설문이 제출되었습니다. 실험 조건 통제를 위해 5분이 모두 지나야 다음 화면으로 이동합니다. 잠시만 대기해 주세요.");
     }
 
     function startBreakTime() {
